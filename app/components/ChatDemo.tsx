@@ -12,33 +12,24 @@ interface Message {
 const sampleConversation: Omit<Message, "id" | "timestamp">[] = [
 	{
 		sender: "user",
-		content: "こんにちは！どのようなWebアプリケーションを開発できますか？",
+		content: "どのようなWebアプリケーションを開発できますか？",
 	},
 	{
 		sender: "ai",
 		content:
-			"こんにちは！私は様々なWebアプリケーションの開発が可能です。React + Next.js でのSPAから、PHP + Laravel でのWebシステム、AIを活用したアプリケーションまで幅広く対応してきました。",
+			"React + Next.js、PHP + Laravel でのWebシステム開発、AIを活用したアプリケーションが得意です。",
 	},
-	{
-		sender: "user",
-		content: "AIを活用したアプリケーションについて詳しく教えてください",
-	},
+	{ sender: "user", content: "AIアプリケーションはどんなものが作れる？" },
 	{
 		sender: "ai",
 		content:
-			"Nextjs + TypeScript を使用して、自然言語でデータベースに問い合わせができるSQLAgentや、Web検索機能を持つLLMアプリケーションの開発経験があります。",
+			"現在は主にNextjs + Typescriptを使ってAIAgentの開発に取り組んでいます!",
 	},
-	{ sender: "user", content: "過去にどのような開発実績がありますか？" },
+	{ sender: "user", content: "どのような業務を主にやっていたの？" },
 	{
 		sender: "ai",
 		content:
-			"7年間のアプリケーション開発経験があり、住宅基幹システムのWebアプリケーション、医薬系ECサイト、IoT関連の管理ツールなどを手がけてきました。技術スタックとしては Java + Spring、PHP + Laravel、Salesforce + Apex、そして最近ではReact + TypeScript でのモダンフロントエンド開発を得意としています。",
-	},
-	{ sender: "user", content: "チーム開発での役割はどうでしたか？" },
-	{
-		sender: "ai",
-		content:
-			"技術選定、開発環境の整備、教育資料の作成、E2Eテストの導入など、レガシーシステムからモダンな環境へのリプレイスなどに取り組んでいました！",
+			"レガシーシステムからモダンなシステムのへの移行（システム開発業務）、技術選定や教育に取り組んでいました。",
 	},
 ];
 
@@ -61,9 +52,9 @@ export default function ChatDemo() {
 						setMessages((prev) => [...prev, newMessage]);
 						setIsTyping(false);
 						setCurrentIndex((prev) => prev + 1);
-					}, 1000);
+					}, 1500);
 				},
-				currentIndex === 0 ? 500 : 2000
+				currentIndex === 0 ? 1000 : 3000
 			);
 
 			return () => clearTimeout(timer);
@@ -77,92 +68,161 @@ export default function ChatDemo() {
 	};
 
 	return (
-		<div className="max-w-4xl mx-auto">
-			<div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden">
-				{/* チャットヘッダー */}
-				<div className="bg-blue-600 text-white p-4 flex justify-between items-center">
-					<div className="flex items-center space-x-3">
-						<div className="w-3 h-3 bg-green-400 rounded-full"></div>
-						<span className="font-medium">AIアシスタント デモ</span>
+		<div className="w-full mx-auto">
+			{/* AI Chat Demo Header */}
+			<div className="text-center mb-4">
+				<h3 className="text-xl font-semibold text-white mb-2">
+					私について
+				</h3>
+			</div>
+
+			<div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
+				{/* Chat Header */}
+				<div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4">
+					<div className="flex justify-between items-center">
+						<div className="flex items-center space-x-3">
+							<div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+							<span className="font-medium">AI Assistant</span>
+						</div>
+						<button
+							onClick={resetDemo}
+							className="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1 rounded-full text-xs transition-all duration-300"
+						>
+							リセット
+						</button>
 					</div>
-					<button
-						onClick={resetDemo}
-						className="bg-blue-700 hover:bg-blue-800 px-3 py-1 rounded text-sm transition-colors"
-					>
-						リセット
-					</button>
 				</div>
 
-				{/* チャットエリア */}
-				<div className="h-96 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
+				{/* Chat Messages Area - 高さと幅を広げた */}
+				<div className="h-96 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
 					{messages.map((message) => (
 						<div
 							key={message.id}
-							className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
+							className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"} animate-fade-in`}
 						>
 							<div
-								className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+								className={`max-w-sm lg:max-w-md xl:max-w-lg px-4 py-3 rounded-2xl shadow-lg ${
 									message.sender === "user"
-										? "bg-blue-600 text-white"
-										: "bg-white dark:bg-gray-700 text-gray-800 dark:text-white border"
+										? "bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-br-sm"
+										: "bg-white dark:bg-gray-700 text-gray-800 dark:text-white border border-gray-200 dark:border-gray-600 rounded-bl-sm"
 								}`}
 							>
 								<div className="flex items-center space-x-2 mb-1">
-									<span className="text-xs font-medium">
+									<span
+										className={`text-xs font-medium ${
+											message.sender === "user"
+												? "text-blue-100"
+												: "text-gray-500 dark:text-gray-400"
+										}`}
+									>
 										{message.sender === "user"
-											? "あなた"
+											? "You"
 											: "AI"}
 									</span>
 								</div>
-								<p className="text-sm">{message.content}</p>
+								<p className="text-sm leading-relaxed">
+									{message.content}
+								</p>
 							</div>
 						</div>
 					))}
 
-					{/* タイピングインジケーター */}
+					{/* Typing Indicator */}
 					{isTyping && (
-						<div className="flex justify-start">
-							<div className="bg-white dark:bg-gray-700 border rounded-lg px-4 py-2 max-w-xs">
-								<div className="flex items-center space-x-1">
-									<span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+						<div className="flex justify-start animate-fade-in">
+							<div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl rounded-bl-sm px-4 py-3 max-w-sm lg:max-w-md shadow-lg">
+								<div className="flex items-center space-x-1 mb-1">
+									<span className="text-xs font-medium text-gray-500 dark:text-gray-400">
 										AI
 									</span>
 								</div>
-								<div className="flex space-x-1 mt-1">
-									<div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+								<div className="flex space-x-1">
+									<div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
 									<div
-										className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
+										className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
 										style={{ animationDelay: "0.1s" }}
 									></div>
 									<div
-										className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
+										className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
 										style={{ animationDelay: "0.2s" }}
 									></div>
 								</div>
 							</div>
 						</div>
 					)}
+
+					{/* Empty State */}
+					{messages.length === 0 && !isTyping && (
+						<div className="text-center py-8">
+							<div className="text-4xl mb-4">🤖</div>
+							<p className="text-gray-500 dark:text-gray-400 text-sm">
+								まもなく会話が始まります...
+							</p>
+						</div>
+					)}
 				</div>
 
-				{/* 入力エリア（デモ用なので無効化） */}
-				<div className="p-4 bg-white dark:bg-gray-800 border-t">
-					<div className="flex space-x-2">
+				{/* Input Area (Disabled Demo) */}
+				<div className="p-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+					<div className="flex space-x-3">
 						<input
 							type="text"
 							placeholder=""
-							className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700"
+							className="flex-1 border border-gray-300 dark:border-gray-600 rounded-full px-4 py-2 text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
 							disabled
 						/>
 						<button
-							className="bg-gray-400 text-white px-4 py-2 rounded-lg cursor-not-allowed"
+							className="bg-gray-400 text-white p-2 rounded-full cursor-not-allowed"
 							disabled
 						>
-							送信
+							<svg
+								className="w-4 h-4"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth={2}
+									d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+								/>
+							</svg>
 						</button>
 					</div>
-					<p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center"></p>
+					<p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center"></p>
 				</div>
 			</div>
+
+			{/* Tech Stack Indicator */}
+			{/* <div className="mt-4 text-center">
+				<div className="inline-flex items-center space-x-2 bg-white bg-opacity-10 backdrop-blur-sm rounded-full px-4 py-2">
+					<span className="text-xs text-gray-300">Built with</span>
+					<span className="text-xs font-semibold text-blue-300">
+						React
+					</span>
+					<span className="text-xs text-gray-300">+</span>
+					<span className="text-xs font-semibold text-purple-300">
+						LangChain.js
+					</span>
+				</div>
+			</div> */}
+
+			<style jsx>{`
+				@keyframes fade-in {
+					from {
+						opacity: 0;
+						transform: translateY(10px);
+					}
+					to {
+						opacity: 1;
+						transform: translateY(0);
+					}
+				}
+				.animate-fade-in {
+					animation: fade-in 0.5s ease-out;
+				}
+			`}</style>
 		</div>
 	);
 }
