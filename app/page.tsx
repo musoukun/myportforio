@@ -5,14 +5,31 @@ export default function Home() {
 		<div className="bg-gray-50 dark:bg-gray-900">
 			{/* Sticky Navigation */}
 			<nav className="fixed top-0 w-full bg-white dark:bg-gray-800 shadow-lg z-50 transition-all duration-300">
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+				<div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
 					<div className="flex justify-between h-16">
 						<div className="flex items-center">
 							<div className="flex-shrink-0">
-								<h2 className="text-xl font-bold text-gray-900 dark:text-white">
+								<h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
 									HATAKEYAMA
 								</h2>
 							</div>
+						</div>
+						<div className="flex md:hidden items-center">
+							<button className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+								<svg
+									className="w-6 h-6"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth={2}
+										d="M4 6h16M4 12h16M4 18h16"
+									/>
+								</svg>
+							</button>
 						</div>
 						<div className="hidden md:flex items-center space-x-8">
 							<a
@@ -53,7 +70,7 @@ export default function Home() {
 			{/* Hero Section with Parallax Effect */}
 			<section
 				id="home"
-				className="relative min-h-screen flex items-center justify-center overflow-hidden"
+				className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16"
 			>
 				{/* Parallax Background */}
 				<div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 opacity-90"></div>
@@ -68,28 +85,28 @@ export default function Home() {
 					></div>
 					<div
 						className="absolute top-1/2 left-1/3 w-48 h-48 bg-indigo-500 rounded-full opacity-10 animate-pulse"
-						style={{ animationDelay: "2s" }}
+						style={{ animationDelay: "1s" }}
 					></div>
 				</div>
 
 				{/* Main Content */}
 				<div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-					<div className="grid lg:grid-cols-2 gap-12 items-center">
+					<div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center min-h-[calc(100vh-4rem)]">
 						{/* Left Side - Hero Text */}
-						<div className="text-center lg:text-left">
+						<div className="text-center lg:text-left pt-8 sm:pt-0">
 							<div className="mb-6">
-								<h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight">
+								<h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight">
 									I&apos;m{" "}
-									<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+									<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 block sm:inline">
 										hatakeyama
 									</span>
 								</h1>
-								<h2 className="text-2xl md:text-3xl lg:text-4xl font-light text-gray-200 mt-4">
+								<h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-light text-gray-200 mt-4">
 									nextjs web app developer
 								</h2>
 							</div>
 
-							<p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl">
+							<p className="text-md md:text-lg text-gray-300 mb-8 max-w-2xl leading-relaxed">
 								React + Next.js + TypeScript
 								を活用したモダンWebアプリケーション開発。
 								7年間の開発経験と3年間の運用保守経験を持つフルスタック開発者です。
@@ -133,7 +150,7 @@ export default function Home() {
 
 						{/* Right Side - Chat Demo */}
 						<div className="flex justify-center lg:justify-end">
-							<div className="w-full max-w-xl lg:max-w-2xl xl:max-w-3xl">
+							<div className="w-full max-w-md sm:max-w-lg lg:max-w-xl xl:max-w-2xl">
 								<ChatDemo />
 							</div>
 						</div>
@@ -164,7 +181,7 @@ export default function Home() {
 								モダンWebアプリケーション開発者
 							</h3>
 							<p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-								住宅基幹システムのWebアプリケーション運用から始まり、主にWebアプリのスクラッチ開発の経験を積んできました。
+								住宅基幹システムのWebアプリケーション運用からキャリアを開始し、Webアプリのスクラッチ開発の経験を積んできました。
 								最新の技術トレンドを常にキャッチアップし、効率的な開発を心がけています。
 							</p>
 							<p className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
@@ -176,10 +193,11 @@ export default function Home() {
 							{/* Programming Languages Usage */}
 							<div className="mb-6">
 								<h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-									よく使用する言語・技術
+									開発プロジェクトでの使用頻度
 								</h4>
 								<p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-									開発プロジェクトでの使用頻度
+									最近はもっぱらReact + Next.js +
+									TypeScriptをつかってます。
 								</p>
 							</div>
 							<div className="space-y-4">
@@ -189,13 +207,13 @@ export default function Home() {
 											React / Next.js + TypeScript
 										</span>
 										<span className="text-gray-700 dark:text-gray-300">
-											70%
+											80%
 										</span>
 									</div>
 									<div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
 										<div
 											className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full"
-											style={{ width: "70%" }}
+											style={{ width: "80%" }}
 										></div>
 									</div>
 								</div>
@@ -206,13 +224,13 @@ export default function Home() {
 											PHP / Laravel
 										</span>
 										<span className="text-gray-700 dark:text-gray-300">
-											20%
+											10%
 										</span>
 									</div>
 									<div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
 										<div
 											className="bg-gradient-to-r from-orange-600 to-orange-500 h-2 rounded-full"
-											style={{ width: "20%" }}
+											style={{ width: "10%" }}
 										></div>
 									</div>
 								</div>
@@ -251,7 +269,7 @@ export default function Home() {
 										<span className="text-blue-600 mr-2">
 											•
 										</span>
-										開発知識の教育と共有を重視しています
+										開発知識の教育と情報発信を重視しています。
 									</li>
 									<li className="flex items-start">
 										<span className="text-blue-600 mr-2">
@@ -298,6 +316,200 @@ export default function Home() {
 				</div>
 			</section>
 
+			{/* Portfolio Section */}
+			<section id="portfolio" className="py-20 bg-white dark:bg-gray-800">
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+					<div className="text-center mb-16">
+						<h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+							Portfolio
+						</h2>
+						<div className="w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 mx-auto"></div>
+						<p className="text-lg text-gray-600 dark:text-gray-300 mt-6 max-w-3xl mx-auto">
+							私が開発したWebアプリケーションやツールをご紹介します。
+							それぞれ異なる技術スタックと課題解決に焦点を当てています。
+						</p>
+					</div>
+
+					<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+						{/* Memo App */}
+						<div className="bg-gray-50 dark:bg-gray-700 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group">
+							<div className="relative h-48 overflow-hidden">
+								<img
+									src="https://raw.githubusercontent.com/musoukun/memoapp/main/gif/beta.gif"
+									alt="Notion Clone Memo App"
+									className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+								/>
+								<div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+							</div>
+							<div className="p-6">
+								<h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
+									Notion Clone Memo App
+								</h3>
+								<p className="text-gray-600 dark:text-gray-300 mb-4 text-sm leading-relaxed">
+									React + TypeScript +
+									Prismaで開発したNotionライクなメモアプリ。BlockNoteエディターを使用してリッチテキスト編集機能を実装。両面TypeScriptで開発。
+								</p>
+								<div className="flex flex-wrap gap-2 mb-4">
+									{[
+										"TypeScript",
+										"React",
+										"Express",
+										"Prisma",
+										"PostgreSQL",
+									].map((tech) => (
+										<span
+											key={tech}
+											className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full text-xs"
+										>
+											{tech}
+										</span>
+									))}
+								</div>
+								<div className="flex justify-between items-center">
+									<a
+										href="https://github.com/musoukun/memoapp"
+										target="_blank"
+										rel="noopener noreferrer"
+										className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors flex items-center text-sm"
+									>
+										<span className="mr-1">🐙</span>
+										GitHub
+									</a>
+									<span className="text-xs text-gray-500 dark:text-gray-400">
+										学習用プロジェクト
+									</span>
+								</div>
+							</div>
+						</div>
+
+						{/* VBA 採点支援システム */}
+						<div className="bg-gray-50 dark:bg-gray-700 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group">
+							<div className="relative h-48 bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+								<div className="text-center text-white">
+									<div className="text-6xl mb-2">📊</div>
+									<div className="text-sm font-medium">
+										VBA Automation
+									</div>
+								</div>
+								<div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+							</div>
+							<div className="p-6">
+								<h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
+									VBA 採点支援システム
+								</h3>
+								<p className="text-gray-600 dark:text-gray-300 mb-4 text-sm leading-relaxed">
+									学校の評価項目管理および採点基準設定を自動化するVBAシステム。科目・観点・単元別の評価シートを自動生成し、自動計算や色分け表示機能を提供。
+								</p>
+								<div className="flex flex-wrap gap-2 mb-4">
+									{[
+										"VBA",
+										"Excel",
+										"Automation",
+										"Education",
+									].map((tech) => (
+										<span
+											key={tech}
+											className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full text-xs"
+										>
+											{tech}
+										</span>
+									))}
+								</div>
+								<div className="flex justify-between items-center">
+									<a
+										href="https://github.com/musoukun/saitenxlsx"
+										target="_blank"
+										rel="noopener noreferrer"
+										className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors flex items-center text-sm"
+									>
+										<span className="mr-1">🐙</span>
+										GitHub
+									</a>
+									<span className="text-xs text-gray-500 dark:text-gray-400">
+										業務効率化ツール
+									</span>
+								</div>
+							</div>
+						</div>
+
+						{/* Discord Bot */}
+						<div className="bg-gray-50 dark:bg-gray-700 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group">
+							<div className="relative h-48 bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+								<div className="text-center text-white">
+									<div className="text-6xl mb-2">🤖</div>
+									<div className="text-sm font-medium">
+										AI Voice Bot
+									</div>
+								</div>
+								<div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+							</div>
+							<div className="p-6">
+								<h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
+									Gemini × VOICEVOX Discord Bot
+								</h3>
+								<p className="text-gray-600 dark:text-gray-300 mb-4 text-sm leading-relaxed">
+									DiscordのボイスチャットでGemini
+									AIとVOICEVOXを連携させた音声Bot。
+									チャットに入室してずんだもんの音声でGeminiの回答を話してくれます！
+									※ずんだもん以外も指定できます
+								</p>
+								<div className="flex flex-wrap gap-2 mb-4">
+									{[
+										"Node.js",
+										"Discord.js",
+										"Gemini API",
+										"VOICEVOX",
+									].map((tech) => (
+										<span
+											key={tech}
+											className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded-full text-xs"
+										>
+											{tech}
+										</span>
+									))}
+								</div>
+								<div className="flex justify-between items-center">
+									<a
+										href="https://github.com/musoukun/geminiAi-voice-discord-bot"
+										target="_blank"
+										rel="noopener noreferrer"
+										className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 transition-colors flex items-center text-sm"
+									>
+										<span className="mr-1">🐙</span>
+										GitHub
+									</a>
+									<span className="text-xs text-gray-500 dark:text-gray-400">
+										AIアプリケーション
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{/* Call to Action */}
+					<div className="text-center mt-16">
+						<div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
+							<h3 className="text-2xl font-bold mb-4">
+								もっと詳しく見る
+							</h3>
+							<p className="text-blue-100 mb-6 max-w-2xl mx-auto">
+								各プロジェクトの詳細な技術仕様や開発プロセスについては、
+								GitHubリポジトリをご確認ください。
+							</p>
+							<a
+								href="https://github.com/musoukun"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="inline-flex items-center bg-white text-blue-600 px-6 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors"
+							>
+								<span className="mr-2">🐙</span>
+								GitHubプロフィール
+							</a>
+						</div>
+					</div>
+				</div>
+			</section>
+
 			{/* Resume Section */}
 			<section id="resume" className="py-20 bg-gray-50 dark:bg-gray-900">
 				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -321,7 +533,7 @@ export default function Home() {
 							<div className="space-y-8">
 								<div className="border-l-4 border-blue-600 pl-6 pb-6">
 									<h4 className="text-xl font-semibold text-gray-900 dark:text-white">
-										IoT関連システム開発
+										Webアプリ開発
 									</h4>
 									<p className="text-blue-600 font-medium">
 										製造業向けシステムインテグレータ
@@ -525,9 +737,6 @@ export default function Home() {
 													</p>
 												</div>
 											</div>
-											<div className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-medium">
-												取得済み
-											</div>
 										</div>
 
 										<div className="flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 rounded-lg border border-orange-200 dark:border-orange-700">
@@ -545,9 +754,6 @@ export default function Home() {
 														Amazon Web Services
 													</p>
 												</div>
-											</div>
-											<div className="bg-orange-100 dark:bg-orange-800 text-orange-800 dark:text-orange-200 px-3 py-1 rounded-full text-sm font-medium">
-												取得済み
 											</div>
 										</div>
 									</div>
@@ -599,7 +805,7 @@ export default function Home() {
 						<p className="text-gray-500 dark:text-gray-400 mt-6 max-w-2xl mx-auto">
 							お問い合わせ機能は現在開発中です。
 							<br />
-							しばらくお待ちください。
+							ご連絡はwaroshi@gmail.comにお願いします。
 						</p>
 					</div>
 
