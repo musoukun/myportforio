@@ -79,7 +79,7 @@ export default function Home() {
 						<div className="text-center lg:text-left">
 							<div className="mb-6">
 								<h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight">
-									I'm{" "}
+									I&apos;m{" "}
 									<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
 										hatakeyama
 									</span>
@@ -133,7 +133,7 @@ export default function Home() {
 
 						{/* Right Side - Chat Demo */}
 						<div className="flex justify-center lg:justify-end">
-							<div className="w-full max-w-lg lg:max-w-xl">
+							<div className="w-full max-w-xl lg:max-w-2xl xl:max-w-3xl">
 								<ChatDemo />
 							</div>
 						</div>
@@ -164,64 +164,55 @@ export default function Home() {
 								モダンWebアプリケーション開発者
 							</h3>
 							<p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-								住宅基幹システムのWebアプリケーション運用から始まり、スクラッチ開発、SaaS系Webアプリケーション開発まで幅広い経験を積んできました。
-								最新の技術トレンドを常にキャッチアップし、効率的で保守性の高いコードの作成を心がけています。
+								住宅基幹システムのWebアプリケーション運用から始まり、主にWebアプリのスクラッチ開発の経験を積んできました。
+								最新の技術トレンドを常にキャッチアップし、効率的な開発を心がけています。
 							</p>
 							<p className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-								特にReact + TypeScript +
+								現在は特にReact + TypeScript +
 								Next.jsを使用したフロントエンド開発と、
-								LangChain.js
-								を活用したAIアプリケーション開発に力を入れており、
-								ユーザビリティとパフォーマンスを両立したアプリケーションの構築を得意としています。
+								Mastraを活用したAIアプリケーション開発に力を入れてます。
 							</p>
 
-							{/* Skills Progress Bars */}
+							{/* Programming Languages Usage */}
+							<div className="mb-6">
+								<h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+									よく使用する言語・技術
+								</h4>
+								<p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+									開発プロジェクトでの使用頻度
+								</p>
+							</div>
 							<div className="space-y-4">
 								<div>
 									<div className="flex justify-between mb-2">
 										<span className="text-gray-700 dark:text-gray-300 font-medium">
-											React / Next.js
+											React / Next.js + TypeScript
 										</span>
 										<span className="text-gray-700 dark:text-gray-300">
-											90%
+											70%
 										</span>
 									</div>
 									<div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
 										<div
 											className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full"
-											style={{ width: "90%" }}
+											style={{ width: "70%" }}
 										></div>
 									</div>
 								</div>
-								<div>
-									<div className="flex justify-between mb-2">
-										<span className="text-gray-700 dark:text-gray-300 font-medium">
-											TypeScript
-										</span>
-										<span className="text-gray-700 dark:text-gray-300">
-											85%
-										</span>
-									</div>
-									<div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-										<div
-											className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full"
-											style={{ width: "85%" }}
-										></div>
-									</div>
-								</div>
+
 								<div>
 									<div className="flex justify-between mb-2">
 										<span className="text-gray-700 dark:text-gray-300 font-medium">
 											PHP / Laravel
 										</span>
 										<span className="text-gray-700 dark:text-gray-300">
-											80%
+											20%
 										</span>
 									</div>
 									<div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
 										<div
-											className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full"
-											style={{ width: "80%" }}
+											className="bg-gradient-to-r from-orange-600 to-orange-500 h-2 rounded-full"
+											style={{ width: "20%" }}
 										></div>
 									</div>
 								</div>
@@ -231,13 +222,13 @@ export default function Home() {
 											Java / Spring
 										</span>
 										<span className="text-gray-700 dark:text-gray-300">
-											75%
+											10%
 										</span>
 									</div>
 									<div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
 										<div
-											className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full"
-											style={{ width: "75%" }}
+											className="bg-gradient-to-r from-green-600 to-green-500  h-2 rounded-full"
+											style={{ width: "10%" }}
 										></div>
 									</div>
 								</div>
@@ -254,25 +245,19 @@ export default function Home() {
 										<span className="text-blue-600 mr-2">
 											•
 										</span>
-										アジャイル開発手法に基づく反復的な開発
+										アイデアを形にするのが早いです。素早くWebアプリを開発します。
 									</li>
 									<li className="flex items-start">
 										<span className="text-blue-600 mr-2">
 											•
 										</span>
-										テスト駆動開発（TDD）の実践
+										開発知識の教育と共有を重視しています
 									</li>
 									<li className="flex items-start">
 										<span className="text-blue-600 mr-2">
 											•
 										</span>
-										CI/CDパイプラインの構築と運用
-									</li>
-									<li className="flex items-start">
-										<span className="text-blue-600 mr-2">
-											•
-										</span>
-										ユーザビリティを重視したUI/UX設計
+										CI/CDパイプラインの構築と運用、自動テスト等もしていました。
 									</li>
 								</ul>
 							</div>
@@ -283,21 +268,21 @@ export default function Home() {
 								</h4>
 								<div className="grid grid-cols-2 gap-4">
 									<div className="text-center p-3 bg-white dark:bg-gray-600 rounded-lg">
-										<div className="text-2xl mb-2">🚀</div>
+										<div className="text-2xl mb-2">💻</div>
 										<div className="text-sm text-gray-600 dark:text-gray-300">
-											SPA開発
+											Webアプリ開発
 										</div>
 									</div>
 									<div className="text-center p-3 bg-white dark:bg-gray-600 rounded-lg">
 										<div className="text-2xl mb-2">🤖</div>
 										<div className="text-sm text-gray-600 dark:text-gray-300">
-											AI統合
+											AIアプリケーション開発
 										</div>
 									</div>
 									<div className="text-center p-3 bg-white dark:bg-gray-600 rounded-lg">
-										<div className="text-2xl mb-2">⚡</div>
+										<div className="text-2xl mb-2">📚</div>
 										<div className="text-sm text-gray-600 dark:text-gray-300">
-											パフォーマンス
+											教育
 										</div>
 									</div>
 									<div className="text-center p-3 bg-white dark:bg-gray-600 rounded-lg">
@@ -323,7 +308,7 @@ export default function Home() {
 						<div className="w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 mx-auto"></div>
 					</div>
 
-					<div className="grid md:grid-cols-2 gap-12">
+					<div className="grid lg:grid-cols-3 md:grid-cols-2 gap-8">
 						{/* Experience */}
 						<div>
 							<h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-8 flex items-center">
@@ -494,9 +479,8 @@ export default function Home() {
 									</h4>
 									<div className="flex flex-wrap gap-2">
 										{[
-											"LangChain.js",
+											"Mastra",
 											"Playwright",
-											"Jest",
 											"Git",
 											"GitLab CI/CD",
 											"Salesforce",
@@ -508,6 +492,64 @@ export default function Home() {
 												{skill}
 											</span>
 										))}
+									</div>
+								</div>
+							</div>
+						</div>
+
+						{/* Certifications */}
+						<div>
+							<h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-8 flex items-center">
+								<span className="bg-yellow-500 text-white p-2 rounded-lg mr-3">
+									🏆
+								</span>
+								資格・認定
+							</h3>
+
+							<div className="space-y-6">
+								<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+									<div className="space-y-4">
+										<div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+											<div className="flex items-center space-x-3">
+												<div className="bg-blue-600 text-white p-2 rounded-lg">
+													<span className="text-lg">
+														💻
+													</span>
+												</div>
+												<div>
+													<h5 className="font-semibold text-gray-900 dark:text-white">
+														基本情報技術者試験
+													</h5>
+													<p className="text-sm text-gray-600 dark:text-gray-300">
+														IPA（情報処理推進機構）
+													</p>
+												</div>
+											</div>
+											<div className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-medium">
+												取得済み
+											</div>
+										</div>
+
+										<div className="flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 rounded-lg border border-orange-200 dark:border-orange-700">
+											<div className="flex items-center space-x-3">
+												<div className="bg-orange-500 text-white p-2 rounded-lg">
+													<span className="text-lg">
+														☁️
+													</span>
+												</div>
+												<div>
+													<h5 className="font-semibold text-gray-900 dark:text-white">
+														AWS Cloud Practitioner
+													</h5>
+													<p className="text-sm text-gray-600 dark:text-gray-300">
+														Amazon Web Services
+													</p>
+												</div>
+											</div>
+											<div className="bg-orange-100 dark:bg-orange-800 text-orange-800 dark:text-orange-200 px-3 py-1 rounded-full text-sm font-medium">
+												取得済み
+											</div>
+										</div>
 									</div>
 								</div>
 							</div>

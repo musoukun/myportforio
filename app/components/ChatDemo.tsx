@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 
 interface Message {
 	id: number;
-	sender: "user" | "ai";
+	sender: "user" | "ai" | "hatakeyama";
 	content: string;
 	timestamp: Date;
 }
@@ -15,19 +15,19 @@ const sampleConversation: Omit<Message, "id" | "timestamp">[] = [
 		content: "どのようなWebアプリケーションを開発できますか？",
 	},
 	{
-		sender: "ai",
+		sender: "hatakeyama",
 		content:
 			"React + Next.js、PHP + Laravel でのWebシステム開発、AIを活用したアプリケーションが得意です。",
 	},
 	{ sender: "user", content: "AIアプリケーションはどんなものが作れる？" },
 	{
-		sender: "ai",
+		sender: "hatakeyama",
 		content:
 			"現在は主にNextjs + Typescriptを使ってAIAgentの開発に取り組んでいます!",
 	},
 	{ sender: "user", content: "どのような業務を主にやっていたの？" },
 	{
-		sender: "ai",
+		sender: "hatakeyama",
 		content:
 			"レガシーシステムからモダンなシステムのへの移行（システム開発業務）、技術選定や教育に取り組んでいました。",
 	},
@@ -77,39 +77,41 @@ export default function ChatDemo() {
 			</div>
 
 			<div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
-				{/* Chat Header */}
-				<div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4">
+				{/* Chat Header - サイズ大きく */}
+				<div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
 					<div className="flex justify-between items-center">
-						<div className="flex items-center space-x-3">
-							<div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-							<span className="font-medium">AI Assistant</span>
+						<div className="flex items-center space-x-4">
+							<div className="w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
+							<span className="font-semibold text-lg">
+								AI Assistant
+							</span>
 						</div>
 						<button
 							onClick={resetDemo}
-							className="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1 rounded-full text-xs transition-all duration-300"
+							className="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-full text-blue-950 text-sm transition-all duration-300"
 						>
 							リセット
 						</button>
 					</div>
 				</div>
 
-				{/* Chat Messages Area - 高さと幅を広げた */}
-				<div className="h-96 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+				{/* Chat Messages Area - さらに大きく */}
+				<div className="h-[28rem] lg:h-[32rem] overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
 					{messages.map((message) => (
 						<div
 							key={message.id}
 							className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"} animate-fade-in`}
 						>
 							<div
-								className={`max-w-sm lg:max-w-md xl:max-w-lg px-4 py-3 rounded-2xl shadow-lg ${
+								className={`max-w-md lg:max-w-lg xl:max-w-xl px-5 py-4 rounded-2xl shadow-lg ${
 									message.sender === "user"
 										? "bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-br-sm"
 										: "bg-white dark:bg-gray-700 text-gray-800 dark:text-white border border-gray-200 dark:border-gray-600 rounded-bl-sm"
 								}`}
 							>
-								<div className="flex items-center space-x-2 mb-1">
+								<div className="flex items-center space-x-2 mb-2">
 									<span
-										className={`text-xs font-medium ${
+										className={`text-sm font-medium ${
 											message.sender === "user"
 												? "text-blue-100"
 												: "text-gray-500 dark:text-gray-400"
@@ -120,7 +122,7 @@ export default function ChatDemo() {
 											: "AI"}
 									</span>
 								</div>
-								<p className="text-sm leading-relaxed">
+								<p className="text-base leading-relaxed">
 									{message.content}
 								</p>
 							</div>
@@ -130,20 +132,20 @@ export default function ChatDemo() {
 					{/* Typing Indicator */}
 					{isTyping && (
 						<div className="flex justify-start animate-fade-in">
-							<div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl rounded-bl-sm px-4 py-3 max-w-sm lg:max-w-md shadow-lg">
-								<div className="flex items-center space-x-1 mb-1">
-									<span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+							<div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl rounded-bl-sm px-5 py-4 max-w-md lg:max-w-lg shadow-lg">
+								<div className="flex items-center space-x-2 mb-2">
+									<span className="text-sm font-medium text-gray-500 dark:text-gray-400">
 										AI
 									</span>
 								</div>
 								<div className="flex space-x-1">
-									<div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+									<div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-bounce"></div>
 									<div
-										className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+										className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-bounce"
 										style={{ animationDelay: "0.1s" }}
 									></div>
 									<div
-										className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+										className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-bounce"
 										style={{ animationDelay: "0.2s" }}
 									></div>
 								</div>
