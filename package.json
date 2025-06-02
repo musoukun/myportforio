@@ -11,13 +11,25 @@
 		"deploy": "npm run export && firebase deploy --only hosting"
 	},
 	"dependencies": {
+		"@ai-sdk/google": "^1.2.18",
+		"@assistant-ui/react": "^0.10.19",
+		"@assistant-ui/react-ai-sdk": "^0.10.13",
+		"@radix-ui/react-dialog": "^1.1.14",
+		"@radix-ui/react-slot": "^1.2.3",
+		"@radix-ui/react-tooltip": "^1.2.7",
 		"@react-three/fiber": "^9.1.2",
 		"@types/three": "^0.176.0",
+		"ai": "^4.3.16",
+		"class-variance-authority": "^0.7.1",
+		"clsx": "^2.1.1",
 		"firebase": "^11.8.1",
+		"lucide-react": "^0.511.0",
 		"next": "15.3.2",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
-		"three": "^0.177.0"
+		"tailwind-merge": "^3.3.0",
+		"three": "^0.177.0",
+		"zod": "^3.25.48"
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3",
@@ -28,6 +40,7 @@
 		"eslint": "^9",
 		"eslint-config-next": "15.3.2",
 		"tailwindcss": "^4",
+		"tw-animate-css": "^1.3.3",
 		"typescript": "^5"
 	}
 }

@@ -211,9 +211,9 @@ export default function ResponsiveFluidBlobs({
 			<div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm text-white p-2 rounded text-xs">
 				<div className="flex flex-col space-y-1">
 					{/* <span>子脈数: {komyakuCount}</span> */}
-					<span className="hidden sm:inline">
+					{/* <span className="hidden sm:inline">
 						{containerSize.width}×{containerSize.height}
-					</span>
+					</span> */}
 				</div>
 			</div>
 		</div>
