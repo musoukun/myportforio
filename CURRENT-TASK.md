@@ -37,13 +37,35 @@
 3. **リアルタイム対応**: システム設定を変更した瞬間に反映されるか
 
 ## 新しいタスク: Firebase環境変数設定
-- [ ] 開発環境用 .env.local ファイル作成
+- ✅ 開発環境用 .env.local ファイル作成
 - [ ] 本番環境用シークレット設定（推奨）
 - [ ] コードでの使用方法確認
+
+## Chat API修正タスク
+- ✅ Vercel AI SDK形式への修正完了
+- ✅ streamText と tool の実装
+- ✅ R2D2システムプロンプト統合
+- ✅ 音声生成ツールの連携
 
 ## Firebase推奨設定方法（APIキー用）
 
 確認後、次の質問（Firebase環境変数）にお答えします。
+
+## 新しい緊急課題: 本番環境API問題
+
+**問題**: Firebase Hosting本番環境でAPI Routes（/api/r2d2-chat）が動作せずHTMLが返される
+**エラー**: `Stream ended with an incomplete line: "<!DOCTYPE html>..."`
+**原因**: Firebase HostingはStatic Hostingのため、Next.js API Routesが動作しない
+
+## 解決オプション
+1. **Firebase Functions**: API Routes をFunctions に移行
+2. **Vercel移行**: Next.js完全サポートのプラットフォーム
+3. **静的版**: チャット機能を表示のみに変更
+4. **ローカル確認**: まず開発環境での動作確認
+
+## 次のステップ
+- ローカル環境でのテスト
+- 本番環境対応方針の決定
 
 ## タスク開始
 まず現在の実装状況を調査します。 
