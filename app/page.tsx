@@ -1,4 +1,5 @@
 import ChatDemo from "./components/ChatDemo";
+import ResponsiveFluidBlobs from "./components/ResponsiveFluidBlobs";
 
 export default function Home() {
 	return (
@@ -330,7 +331,7 @@ export default function Home() {
 						</p>
 					</div>
 
-					<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+					<div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
 						{/* Memo App */}
 						<div className="bg-gray-50 dark:bg-gray-700 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group">
 							<div className="relative h-48 overflow-hidden">
@@ -347,7 +348,7 @@ export default function Home() {
 								</h3>
 								<p className="text-gray-600 dark:text-gray-300 mb-4 text-sm leading-relaxed">
 									React + TypeScript +
-									Prismaで開発したNotionライクなメモアプリ。BlockNoteエディターを使用してリッチテキスト編集機能を実装。両面TypeScriptで開発。
+									Prismaで開発したNotionライクなメモアプリ。BlockNoteエディターを使用してリッチテキスト編集機能を実装。
 								</p>
 								<div className="flex flex-wrap gap-2 mb-4">
 									{[
@@ -355,7 +356,6 @@ export default function Home() {
 										"React",
 										"Express",
 										"Prisma",
-										"PostgreSQL",
 									].map((tech) => (
 										<span
 											key={tech}
@@ -382,6 +382,56 @@ export default function Home() {
 							</div>
 						</div>
 
+						{/* Komyaku Metaball */}
+						<div className="bg-gray-50 dark:bg-gray-700 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group cursor-pointer">
+							<a href="/komyaku" className="block">
+								<div className="relative h-48 overflow-hidden">
+									<ResponsiveFluidBlobs
+										style={{
+											borderRadius: "0",
+											minHeight: "192px",
+										}}
+									/>
+									<div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none"></div>
+									<div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm text-white px-2 py-1 rounded text-xs pointer-events-none">
+										Live Demo
+									</div>
+								</div>
+								<div className="p-6">
+									<h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
+										Komyaku Metaball
+									</h3>
+									<p className="text-gray-600 dark:text-gray-300 mb-4 text-sm leading-relaxed">
+										Three.jsを使用したインタラクティブなmetaballシミュレーション。物理演算による球体の分裂・融合を実装。
+									</p>
+									<div className="flex flex-wrap gap-2 mb-4">
+										{[
+											"Three.js",
+											"React",
+											"TypeScript",
+											"WebGL",
+										].map((tech) => (
+											<span
+												key={tech}
+												className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded-full text-xs"
+											>
+												{tech}
+											</span>
+										))}
+									</div>
+									<div className="flex justify-between items-center">
+										<span className="text-purple-600 dark:text-purple-400 text-sm flex items-center">
+											<span className="mr-1">👁️</span>
+											デモを見る
+										</span>
+										<span className="text-xs text-gray-500 dark:text-gray-400">
+											3Dシミュレーション
+										</span>
+									</div>
+								</div>
+							</a>
+						</div>
+
 						{/* VBA 採点支援システム */}
 						<div className="bg-gray-50 dark:bg-gray-700 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group">
 							<div className="relative h-48 bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
@@ -398,22 +448,19 @@ export default function Home() {
 									VBA 採点支援システム
 								</h3>
 								<p className="text-gray-600 dark:text-gray-300 mb-4 text-sm leading-relaxed">
-									学校の評価項目管理および採点基準設定を自動化するVBAシステム。科目・観点・単元別の評価シートを自動生成し、自動計算や色分け表示機能を提供。
+									学校の評価項目管理および採点基準設定を自動化するVBAシステム。科目・観点・単元別の評価シートを自動生成。
 								</p>
 								<div className="flex flex-wrap gap-2 mb-4">
-									{[
-										"VBA",
-										"Excel",
-										"Automation",
-										"Education",
-									].map((tech) => (
-										<span
-											key={tech}
-											className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full text-xs"
-										>
-											{tech}
-										</span>
-									))}
+									{["VBA", "Excel", "Automation"].map(
+										(tech) => (
+											<span
+												key={tech}
+												className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full text-xs"
+											>
+												{tech}
+											</span>
+										)
+									)}
 								</div>
 								<div className="flex justify-between items-center">
 									<a
@@ -451,14 +498,12 @@ export default function Home() {
 									DiscordのボイスチャットでGemini
 									AIとVOICEVOXを連携させた音声Bot。
 									チャットに入室してずんだもんの音声でGeminiの回答を話してくれます！
-									※ずんだもん以外も指定できます
 								</p>
 								<div className="flex flex-wrap gap-2 mb-4">
 									{[
 										"Node.js",
 										"Discord.js",
 										"Gemini API",
-										"VOICEVOX",
 									].map((tech) => (
 										<span
 											key={tech}
