@@ -355,16 +355,17 @@ export default function Home() {
 
 							<div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
 								{/* policyScope - 日本の政党DeepWiki */}
-								<div className="bg-gray-50 dark:bg-gray-700 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group">
-									<div className="relative h-48 overflow-hidden">
-										<img
-											src="/seitoudeep.gif"
-											alt="日本の政党DeepWiki"
-											className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-										/>
-										<div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-									</div>
-									<div className="p-6">
+								<div className="bg-gray-50 dark:bg-gray-700 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group cursor-pointer">
+									<a href="https://policy-scope.vercel.app/policy-wiki" target="_blank" rel="noopener noreferrer" className="block">
+										<div className="relative h-48 overflow-hidden">
+											<img
+												src="/seitoudeep.gif"
+												alt="日本の政党DeepWiki"
+												className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+											/>
+											<div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+										</div>
+										<div className="p-6">
 										<h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
 											日本の政党DeepWiki
 										</h3>
@@ -388,20 +389,32 @@ export default function Home() {
 											))}
 										</div>
 										<div className="flex justify-between items-center">
-											<a
-												href="https://github.com/musoukun/policyScope"
-												target="_blank"
-												rel="noopener noreferrer"
-												className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors flex items-center text-sm"
-											>
-												<span className="mr-1">🐙</span>
-												GitHub
-											</a>
+											<div className="flex gap-4">
+												<a
+													href="https://github.com/musoukun/policyScope"
+													target="_blank"
+													rel="noopener noreferrer"
+													className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors flex items-center text-sm"
+												>
+													<span className="mr-1">🐙</span>
+													GitHub
+												</a>
+												<a
+													href="https://policy-scope.vercel.app/policy-wiki"
+													target="_blank"
+													rel="noopener noreferrer"
+													className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors flex items-center text-sm"
+												>
+													<span className="mr-1">👁️</span>
+													デモを見る
+												</a>
+											</div>
 											<span className="text-xs text-gray-500 dark:text-gray-400">
 												政治情報検索ツール
 											</span>
 										</div>
 									</div>
+									</a>
 								</div>
 
 								{/* Komyaku Metaball */}
