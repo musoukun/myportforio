@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 // import ChatDemo from "@/components/demo/chat-demo";
 // import ResponsiveFluidBlobs from "@/components/demo/responsive-metaballs";
 import ChatDemo from "@/app/components/ChatDemo";
