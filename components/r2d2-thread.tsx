@@ -27,6 +27,7 @@ import { MarkdownText } from "@/components/markdown-text";
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
 import { useEffect, useState } from "react";
 import { getR2D2Engine } from "@/lib/r2d2-audio-engine";
+import { useAudio } from "@/lib/audio-context";
 
 export const R2D2Thread: FC = () => {
 	return (
@@ -264,9 +265,11 @@ const R2D2EditComposer: FC = () => {
 
 const R2D2AudioPlayer: FC = () => {
 	const message = useMessage();
+	const { registerAudioControl, unregisterAudioControl } = useAudio();
 
 	const handlePlayAudio = async () => {
 		try {
+			// 手動再生の場合は常に許可（ユーザーの明示的な操作）
 			const textContent = message.content.filter(
 				(c) => c.type === "text"
 			);
@@ -279,12 +282,21 @@ const R2D2AudioPlayer: FC = () => {
 			const engine = getR2D2Engine();
 			await engine.initializeAudioContext();
 
-			// 参考プログラムと同じように "auto" で感情を判定
-			const result = await engine.generateSpeech(messageText, "auto");
+			// 音声制御関数を登録
+			registerAudioControl(() => {
+				engine.stopAllAudio();
+			});
+
+			// TODO: メッセージからAI感情分析結果を取得して活用
+			// 現在は従来の方法で音声生成
+			const result = await engine.generateSpeech(messageText);
 
 			console.log(`手動音声再生完了: ${result.message}`);
 		} catch (error) {
 			console.error("音声生成エラー:", error);
+		} finally {
+			// 音声制御の登録を解除
+			unregisterAudioControl();
 		}
 	};
 
@@ -374,10 +386,24 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
 const R2D2AssistantMessage: FC = () => {
 	const message = useMessage();
 	const [hasPlayedAudio, setHasPlayedAudio] = useState(false);
+	const {
+		shouldPlayAudio: canPlayAudio,
+		registerAudioControl,
+		unregisterAudioControl,
+	} = useAudio();
 
 	useEffect(() => {
 		// メッセージの内容が更新され、完了している場合に音声を自動再生
 		if (message.status?.type === "complete" && !hasPlayedAudio) {
+			// 音声再生条件をチェック
+			if (!canPlayAudio()) {
+				console.log(
+					"音声再生がスキップされました（ミュートまたはModal閉状態）"
+				);
+				setHasPlayedAudio(true); // 無限ループを防ぐため
+				return;
+			}
+
 			const textContent = message.content.filter(
 				(c) => c.type === "text"
 			);
@@ -393,16 +419,23 @@ const R2D2AssistantMessage: FC = () => {
 						const engine = getR2D2Engine();
 						await engine.initializeAudioContext();
 
-						// 参考プログラムと同じように "auto" で感情を判定
-						const result = await engine.generateSpeech(
-							messageText,
-							"auto"
-						);
+						// 音声制御関数を登録
+						registerAudioControl(() => {
+							engine.stopAllAudio();
+						});
+
+						// TODO: AI感情分析結果を活用
+						// 現在は従来の方法で音声生成
+						const result = await engine.generateSpeech(messageText);
 
 						console.log(`自動音声再生完了: ${result.message}`);
 						setHasPlayedAudio(true);
 					} catch (error) {
 						console.error("自動音声再生エラー:", error);
+						setHasPlayedAudio(true); // エラーでも無限ループを防ぐ
+					} finally {
+						// 音声制御の登録を解除
+						unregisterAudioControl();
 					}
 				};
 
@@ -410,7 +443,14 @@ const R2D2AssistantMessage: FC = () => {
 				setTimeout(playAudioAutomatically, 500);
 			}
 		}
-	}, [message.status, message.content, hasPlayedAudio]);
+	}, [
+		message.status,
+		message.content,
+		hasPlayedAudio,
+		canPlayAudio,
+		registerAudioControl,
+		unregisterAudioControl,
+	]);
 
 	return (
 		<MessagePrimitive.Root className="relative grid w-full grid-cols-[auto_1fr_auto] grid-rows-[auto_1fr] py-3">

@@ -37,9 +37,23 @@ interface SpeechPatternConfig {
 	patternType: string;
 }
 
+// AI感情分析結果のインターフェース
+export interface AIEmotionAnalysis {
+	emotion: string;
+	intensity: number;
+	reasoning: string;
+	audioModifications: {
+		frequencyMultiplier: number;
+		volumeMultiplier: number;
+		durationMultiplier: number;
+	};
+}
+
 export class R2D2AudioEngine {
 	private audioContext: AudioContext | null = null;
 	private sampleRate = 44100;
+	private currentAudioSources: AudioBufferSourceNode[] = [];
+	private isPlayingStopped = false;
 
 	// 感情設定
 	private emotionConfigs: Record<Emotion, EmotionConfig> = {
@@ -362,16 +376,57 @@ export class R2D2AudioEngine {
 	async playBuffer(buffer: AudioBuffer): Promise<void> {
 		if (!this.audioContext) throw new Error("AudioContext not initialized");
 
+		// 停止フラグがセットされている場合は再生しない
+		if (this.isPlayingStopped) return;
+
 		const source = this.audioContext.createBufferSource();
 		source.buffer = buffer;
 		source.connect(this.audioContext.destination);
+
+		// 現在のソースを追跡
+		this.currentAudioSources.push(source);
 
 		source.start();
 
 		// Promise that resolves when audio finishes playing
 		return new Promise((resolve) => {
-			source.onended = () => resolve();
+			const cleanup = () => {
+				// ソースリストから削除
+				const index = this.currentAudioSources.indexOf(source);
+				if (index > -1) {
+					this.currentAudioSources.splice(index, 1);
+				}
+				resolve();
+			};
+
+			source.onended = cleanup;
+
+			// 停止時のイベントも処理
+			source.addEventListener("ended", cleanup, { once: true });
 		});
+	}
+
+	// 現在再生中の音声をすべて停止
+	stopAllAudio(): void {
+		this.isPlayingStopped = true;
+
+		// 現在再生中の音声ソースをすべて停止
+		this.currentAudioSources.forEach((source) => {
+			try {
+				source.stop();
+			} catch (error) {
+				// 既に停止している場合のエラーを無視
+				console.warn("Audio source already stopped:", error);
+			}
+		});
+
+		// ソース配列をクリア
+		this.currentAudioSources = [];
+	}
+
+	// 音声再生の停止状態をリセット
+	resetAudioState(): void {
+		this.isPlayingStopped = false;
 	}
 
 	private analyzeTextEmotion(text: string): Emotion {
@@ -473,30 +528,54 @@ export class R2D2AudioEngine {
 		return Math.max(1.0, Math.min(readingTime, 30.0));
 	}
 
-	async generateSpeech(
+	// AI感情分析結果を使用した音声生成（新機能）
+	async generateSpeechWithAIEmotion(
 		text: string,
-		emotion: Emotion | "auto" = "auto"
+		aiEmotionAnalysis?: AIEmotionAnalysis
 	): Promise<{ duration: number; message: string }> {
 		await this.initializeAudioContext();
 
-		const detectedEmotion =
-			emotion === "auto"
-				? this.analyzeTextEmotion(text)
-				: (emotion as Emotion);
+		// 再生状態をリセット
+		this.resetAudioState();
+
+		let detectedEmotion: Emotion;
+		let audioModifications = {
+			frequencyMultiplier: 1.0,
+			volumeMultiplier: 1.0,
+			durationMultiplier: 1.0,
+		};
+
+		if (aiEmotionAnalysis) {
+			// AI分析結果を使用
+			detectedEmotion = this.mapStringToEmotion(
+				aiEmotionAnalysis.emotion
+			);
+			audioModifications = aiEmotionAnalysis.audioModifications;
+		} else {
+			// フォールバック：従来のキーワードベース分析
+			detectedEmotion = this.analyzeTextEmotion(text);
+		}
 
 		const patterns = this.getSpeechPatternsForText(text);
 		const targetDuration = this.estimateTextReadingTime(text);
-		const emotionConfig = this.emotionConfigs[detectedEmotion];
+		const baseEmotionConfig = this.emotionConfigs[detectedEmotion];
 
-		const [syllableMin, syllableMax] = emotionConfig.syllableCount;
-		const [pauseMin, pauseMax] = emotionConfig.pauseRange;
+		// AI分析結果に基づいて基本設定を調整
+		const adjustedEmotionConfig = this.applyAudioModifications(
+			baseEmotionConfig,
+			audioModifications
+		);
+
+		const [syllableMin, syllableMax] = adjustedEmotionConfig.syllableCount;
+		const [pauseMin, pauseMax] = adjustedEmotionConfig.pauseRange;
 
 		let totalDuration = 0;
 		const audioBuffers: AudioBuffer[] = [];
 
 		// targetDurationに合わせて適切なsyllableCountを動的に計算
 		const averageSyllableDuration =
-			(emotionConfig.durationRange[0] + emotionConfig.durationRange[1]) /
+			(adjustedEmotionConfig.durationRange[0] +
+				adjustedEmotionConfig.durationRange[1]) /
 			2;
 		const averagePauseDuration = (pauseMin + pauseMax) / 2;
 		const estimatedSyllablesNeeded = Math.ceil(
@@ -514,9 +593,18 @@ export class R2D2AudioEngine {
 			i < syllableCount && totalDuration < targetDuration;
 			i++
 		) {
+			// 停止がリクエストされている場合は中断
+			if (this.isPlayingStopped) {
+				break;
+			}
+
 			const pattern =
 				patterns[Math.floor(Math.random() * patterns.length)];
-			const buffer = this.generateEmotionalBeep(detectedEmotion, pattern);
+			const buffer = this.generateEmotionalBeepWithModifications(
+				detectedEmotion,
+				pattern,
+				audioModifications
+			);
 			audioBuffers.push(buffer);
 			totalDuration += buffer.duration;
 
@@ -556,15 +644,173 @@ export class R2D2AudioEngine {
 			}
 		}
 
-		// 順次再生
+		// 順次再生（停止チェック付き）
 		for (const buffer of audioBuffers) {
+			if (this.isPlayingStopped) {
+				break;
+			}
 			await this.playBuffer(buffer);
 		}
 
+		const analysisInfo = aiEmotionAnalysis
+			? `AI分析結果: ${aiEmotionAnalysis.emotion}(強度${aiEmotionAnalysis.intensity}) - ${aiEmotionAnalysis.reasoning}`
+			: "キーワードベース分析";
+
+		const statusInfo = this.isPlayingStopped ? "（停止されました）" : "";
+
 		return {
 			duration: totalDuration,
-			message: `AIロボくんが${text.length}文字の回答に合わせて${totalDuration.toFixed(1)}秒の音声を再生しました`,
+			message: `AIロボくんが${text.length}文字の回答に合わせて${totalDuration.toFixed(1)}秒の音声を再生しました${statusInfo}（${analysisInfo}）`,
 		};
+	}
+
+	// 文字列を感情enumにマッピング
+	private mapStringToEmotion(emotionString: string): Emotion {
+		const emotionMap: Record<string, Emotion> = {
+			happy: Emotion.HAPPY,
+			excited: Emotion.EXCITED,
+			worried: Emotion.WORRIED,
+			sad: Emotion.SAD,
+			angry: Emotion.ANGRY,
+			surprised: Emotion.SURPRISED,
+			neutral: Emotion.NEUTRAL,
+		};
+		return emotionMap[emotionString] || Emotion.NEUTRAL;
+	}
+
+	// AI分析結果に基づいて基本設定を調整
+	private applyAudioModifications(
+		baseConfig: EmotionConfig,
+		modifications: AIEmotionAnalysis["audioModifications"]
+	): EmotionConfig {
+		return {
+			freqRange: [
+				Math.max(
+					100,
+					baseConfig.freqRange[0] * modifications.frequencyMultiplier
+				),
+				Math.min(
+					8000,
+					baseConfig.freqRange[1] * modifications.frequencyMultiplier
+				),
+			] as [number, number],
+			durationRange: [
+				Math.max(
+					0.01,
+					baseConfig.durationRange[0] *
+						modifications.durationMultiplier
+				),
+				Math.max(
+					0.02,
+					baseConfig.durationRange[1] *
+						modifications.durationMultiplier
+				),
+			] as [number, number],
+			volume: Math.max(
+				0.1,
+				Math.min(
+					1.0,
+					baseConfig.volume * modifications.volumeMultiplier
+				)
+			),
+			syllableCount: baseConfig.syllableCount,
+			pauseRange: baseConfig.pauseRange,
+		};
+	}
+
+	// 音声修正パラメータを適用したBeep生成
+	private generateEmotionalBeepWithModifications(
+		emotion: Emotion,
+		pattern: SpeechPattern,
+		modifications: AIEmotionAnalysis["audioModifications"]
+	): AudioBuffer {
+		const baseConfig = this.emotionConfigs[emotion];
+		const adjustedConfig = this.applyAudioModifications(
+			baseConfig,
+			modifications
+		);
+		const patternConfig = this.speechPatterns[pattern];
+
+		const [freqMin, freqMax] = adjustedConfig.freqRange;
+		const [durMin, durMax] = adjustedConfig.durationRange;
+		const volume = adjustedConfig.volume;
+
+		switch (patternConfig.patternType) {
+			case "rising_tone": {
+				const startFreq = this.random(freqMin, freqMax * 0.7);
+				const endFreq = this.random(freqMax * 0.8, freqMax);
+				const duration = this.random(durMin, durMax);
+				return this.generateSlideWave(
+					startFreq,
+					endFreq,
+					duration,
+					volume
+				);
+			}
+
+			case "stable_tone": {
+				const frequency = this.random(freqMin, freqMax);
+				const duration = this.random(durMin, durMax);
+				return this.generateSineWave(frequency, duration, volume);
+			}
+
+			case "short_high": {
+				const frequency = this.random(freqMax * 0.8, freqMax);
+				const duration = this.random(durMin, durMin + 0.05);
+				return this.generateSineWave(frequency, duration, volume);
+			}
+
+			case "slide": {
+				const ascending = Math.random() > 0.5;
+				const startFreq = ascending
+					? this.random(freqMin, freqMax * 0.5)
+					: this.random(freqMax * 0.7, freqMax);
+				const endFreq = ascending
+					? this.random(freqMax * 0.7, freqMax)
+					: this.random(freqMin, freqMax * 0.5);
+				const duration = this.random(durMin * 2, durMax * 2);
+				return this.generateSlideWave(
+					startFreq,
+					endFreq,
+					duration,
+					volume
+				);
+			}
+
+			case "warble": {
+				const baseFreq = this.random(freqMin, freqMax);
+				const variance = (freqMax - freqMin) * 0.1;
+				const duration = this.random(durMin, durMax);
+				const warbleRate = this.random(8, 15);
+				return this.generateWarbleWave(
+					baseFreq,
+					variance,
+					duration,
+					volume,
+					warbleRate
+				);
+			}
+
+			case "high_pitch": {
+				const frequency = this.random(
+					freqMax * 0.9,
+					Math.min(freqMax * 1.5, 8000)
+				);
+				const duration = this.random(durMin * 2, durMax * 2);
+				return this.generateSineWave(frequency, duration, volume);
+			}
+
+			default:
+				return this.generateSineWave(1000, 0.1, 0.5);
+		}
+	}
+
+	// 従来のgenerateSpeech関数（後方互換性のため）
+	async generateSpeech(
+		text: string
+	): Promise<{ duration: number; message: string }> {
+		// 従来の方法で生成（AI分析なし）
+		return this.generateSpeechWithAIEmotion(text, undefined);
 	}
 }
 

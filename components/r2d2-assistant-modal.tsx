@@ -1,10 +1,12 @@
 "use client";
 
 import { Volume2, VolumeX, Bot } from "lucide-react";
-import { type FC, forwardRef, useState } from "react";
+import { type FC, forwardRef } from "react";
 import { AssistantModalPrimitive } from "@assistant-ui/react";
 import { R2D2Thread } from "@/components/r2d2-thread";
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
+import { useAudio } from "@/lib/audio-context";
+import React from "react";
 
 export const R2D2AssistantModal: FC = () => {
 	return (
@@ -28,13 +30,22 @@ export const R2D2AssistantModal: FC = () => {
 	);
 };
 
-type R2D2ModalButtonProps = { "data-state"?: "open" | "closed" };
+interface R2D2ModalButtonProps {
+	"data-state"?: "open" | "closed";
+}
 
 const R2D2ModalButton = forwardRef<HTMLButtonElement, R2D2ModalButtonProps>(
 	({ "data-state": state, ...rest }, ref) => {
-		const [audioEnabled, setAudioEnabled] = useState(true);
+		const { isAudioEnabled, setAudioEnabled, setModalOpen } = useAudio();
 		const tooltip =
-			state === "open" ? "R2-D2とのチャットを閉じる" : "R2-D2と話す";
+			state === "open"
+				? "AIロボくんとのチャットを閉じる"
+				: "AIロボくんと話す";
+
+		// Modal状態の変更を通知
+		React.useEffect(() => {
+			setModalOpen(state === "open");
+		}, [state, setModalOpen]);
 
 		return (
 			<div className="relative">
@@ -68,12 +79,12 @@ const R2D2ModalButton = forwardRef<HTMLButtonElement, R2D2ModalButtonProps>(
 				<button
 					onClick={(e) => {
 						e.stopPropagation();
-						setAudioEnabled(!audioEnabled);
+						setAudioEnabled(!isAudioEnabled);
 					}}
 					className="absolute -top-2 -right-2 size-6 bg-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform duration-200 border border-gray-200"
-					title={audioEnabled ? "音声OFF" : "音声ON"}
+					title={isAudioEnabled ? "音声OFF" : "音声ON"}
 				>
-					{audioEnabled ? (
+					{isAudioEnabled ? (
 						<Volume2 className="size-3 text-green-600" />
 					) : (
 						<VolumeX className="size-3 text-red-600" />
