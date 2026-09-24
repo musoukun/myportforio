@@ -68,6 +68,8 @@ const C = {
 	hullStripe: hex("#e36f5f"),
 	cabin: hex("#5a6d86"),
 	bird: hex("#39404d"),
+	silhouette: hex("#070b1c"),
+	silhouetteFar: hex("#0d1432"),
 	// emissive
 	warmLight: hex("#ffd98a"),
 	whiteLight: hex("#eef3ff"),
@@ -158,7 +160,7 @@ const BASE = 138; // street level behind the river
 const RIVER_TOP = 140;
 const RIVER_BOTTOM = 160;
 
-type Scene = { col: Uint8ClampedArray; layer: Uint8Array; windows: { x: number; y: number; h: number; warm: boolean }[] };
+type Scene = { col: Uint8ClampedArray; layer: Uint8Array; windows: { x: number; y: number; h: number; warm: boolean; layer: number }[] };
 
 function put(s: Scene, x: number, y: number, c: RGB, l: number) {
 	x = Math.round(x);
@@ -189,8 +191,9 @@ function windowGrid(s: Scene, x: number, y: number, w: number, h: number, dx: nu
 		for (let xx = x; xx < x + w; xx += dx) {
 			const r = hash(xx * 13.1 + yy * 7.7 + seed);
 			if (r > 0.8) continue;
-			put(s, xx, yy, C.glass, s.layer[yy * W + xx] || NEAR);
-			s.windows.push({ x: xx, y: yy, h: hash(xx * 3.3 + yy * 1.9 + seed), warm: r < 0.55 });
+			const layer = s.layer[yy * W + xx] || NEAR;
+			put(s, xx, yy, C.glass, layer);
+			s.windows.push({ x: xx, y: yy, h: hash(xx * 3.3 + yy * 1.9 + seed), warm: r < 0.55, layer });
 		}
 }
 
@@ -572,6 +575,13 @@ export function createDiorama() {
 				r = lerp(r, horizon[0], haze);
 				g = lerp(g, horizon[1], haze);
 				b = lerp(b, horizon[2], haze);
+				// at night the background city sinks into a dark silhouette so the
+				// landmarks in front stay easy to pick out
+				const shade = night * (l === FAR ? 0.8 : 0.88);
+				const sil = l === FAR ? C.silhouetteFar : C.silhouette;
+				r = lerp(r, sil[0], shade);
+				g = lerp(g, sil[1], shade);
+				b = lerp(b, sil[2], shade);
 			}
 			f[j] = r;
 			f[j + 1] = g;
@@ -625,9 +635,12 @@ export function createDiorama() {
 		px(CRAB.x - 2, CRAB.y - 5, crabDark);
 		px(CRAB.x + 2, CRAB.y - 5, crabDark);
 
-		// windows light up one by one as night falls
+		// windows light up one by one as night falls; the background city only
+		// gets a sparse, dim scattering so it reads as shadow
 		for (const w of city.windows) {
-			if (w.h < night * 0.85 + dusk * 0.25) px(w.x, w.y, w.warm ? C.warmLight : C.whiteLight, 0.95);
+			const back = w.layer === FAR || w.layer === MID;
+			const lit = night * (back ? 0.3 : 0.85) + dusk * (back ? 0.08 : 0.25);
+			if (w.h < lit) px(w.x, w.y, w.warm ? C.warmLight : C.whiteLight, back ? (w.layer === FAR ? 0.22 : 0.32) : 0.95);
 		}
 
 		// landmark illumination
