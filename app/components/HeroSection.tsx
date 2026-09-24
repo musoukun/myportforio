@@ -1,111 +1,101 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useScroll, useTransform } from "motion/react";
 
+const stats = [
+  { value: "7+", label: "Years Dev" },
+  { value: "3+", label: "Years Ops" },
+];
 
 export default function HeroSection() {
+  // The 3D diorama behind stays put; the copy lifts away as you scroll.
+  const { scrollY } = useScroll();
+  const y = useTransform(scrollY, [0, 600], [0, -120]);
+  const opacity = useTransform(scrollY, [0, 450], [1, 0]);
+
   return (
-    <section
-      id="home"
-      className="relative min-h-screen flex items-center pt-16 overflow-hidden bg-white dark:bg-neutral-950"
-    >
-      {/* Subtle dot-grid background */}
-      <div className="absolute inset-0 dot-grid opacity-[0.03] dark:opacity-[0.06]" />
+    <section id="home" className="relative h-screen overflow-hidden">
+      {/* Shade the upper-left sky so the copy reads; the campfire below stays clear */}
+      <div className="absolute inset-0 bg-gradient-to-br from-night/85 via-night/20 to-transparent pointer-events-none" />
+      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-night to-transparent pointer-events-none" />
 
-      {/* Gradient mesh background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/4 -right-1/4 w-1/2 h-1/2 rounded-full bg-brand/5 blur-3xl animate-gradient-mesh-1" />
-        <div className="absolute -bottom-1/4 -left-1/4 w-1/2 h-1/2 rounded-full bg-brand/3 blur-3xl animate-gradient-mesh-2" />
-      </div>
+      <motion.div
+        className="relative h-full max-w-6xl mx-auto px-6 flex items-start pt-28 sm:pt-32"
+        style={{ y, opacity }}
+      >
+        <div className="space-y-6 max-w-2xl min-w-0 w-full">
+          <motion.p
+            className="font-pixel text-xs sm:text-sm text-brand flex items-center gap-3"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <span className="inline-block w-2 h-2 bg-brand animate-pulse" />
+            WEB DEVELOPER / REACT · NEXT.JS · TYPESCRIPT
+          </motion.p>
 
-      <div className="relative max-w-6xl mx-auto px-6 w-full">
-        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <div className="space-y-8 pt-12 lg:pt-0 max-w-2xl">
-            {/* Badge */}
-            <motion.div
-              className="flex items-center gap-3"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <div className="h-px w-12 bg-gradient-to-r from-transparent to-brand/40" />
-              <div className="flex items-center gap-2 rounded-lg border border-brand/20 bg-brand/5 px-3 py-1.5">
-                <div className="w-1.5 h-1.5 bg-brand rounded-full animate-pulse" />
-                <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
-                  Web Developer
+          <motion.h1
+            className="text-[14vw] sm:text-7xl md:text-8xl lg:text-9xl font-extrabold tracking-tighter leading-[0.85] text-night-text"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          >
+            HATA
+            <span className="text-brand ember-glow">KEYAMA</span>
+          </motion.h1>
+
+          <motion.p
+            className="text-sm sm:text-base text-night-text/80 max-w-lg leading-relaxed"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            React + Next.js + TypeScript
+            を活用したモダンなWebアプリケーション開発。
+            7年間の開発経験と3年間の運用保守経験を持つ開発者です。
+          </motion.p>
+
+          <motion.div
+            className="flex flex-wrap items-end gap-x-10 gap-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.65 }}
+          >
+            {stats.map((s) => (
+              <div key={s.label}>
+                <span className="font-pixel text-3xl sm:text-4xl text-brand ember-glow">
+                  {s.value}
                 </span>
-              </div>
-              <div className="h-px w-12 bg-gradient-to-l from-transparent to-brand/40" />
-            </motion.div>
-
-            <motion.h1
-              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tighter leading-[0.9]"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-            >
-              HATA
-              <span className="text-brand">KEYAMA</span>
-            </motion.h1>
-
-            <motion.p
-              className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 max-w-lg leading-relaxed"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              React + Next.js + TypeScript
-              を活用したモダンなWebアプリケーション開発。
-              7年間の開発経験と3年間の運用保守経験を持つ開発者です。
-            </motion.p>
-
-            <motion.div
-              className="flex gap-12 pt-2"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <div>
-                <span className="text-3xl sm:text-4xl font-bold font-mono text-brand">
-                  7+
-                </span>
-                <p className="text-[10px] tracking-[0.2em] uppercase text-neutral-400 dark:text-neutral-500 mt-1">
-                  Years Dev
+                <p className="font-pixel text-[10px] uppercase text-night-muted mt-1">
+                  {s.label}
                 </p>
               </div>
-              <div>
-                <span className="text-3xl sm:text-4xl font-bold font-mono text-brand">
-                  3+
-                </span>
-                <p className="text-[10px] tracking-[0.2em] uppercase text-neutral-400 dark:text-neutral-500 mt-1">
-                  Years Ops
-                </p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="flex flex-col sm:flex-row gap-3 pt-2"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
+            ))}
+            <div className="flex gap-3">
               <a
                 href="#portfolio"
-                className="inline-flex items-center justify-center bg-brand text-white px-8 py-3 text-sm font-semibold tracking-wider uppercase rounded-lg hover:bg-brand-hover hover:scale-[1.02] transition-all duration-200 shadow-sm hover:shadow-md"
+                className="font-pixel inline-flex items-center bg-brand text-night px-6 py-3 text-xs uppercase shadow-[4px_4px_0_0_#03050d] hover:bg-brand-hover hover:-translate-y-0.5 transition-all"
               >
                 作品を見る
               </a>
               <a
                 href="#contact"
-                className="inline-flex items-center justify-center border border-brand/30 border-dashed bg-brand/5 text-neutral-700 dark:text-neutral-300 px-8 py-3 text-sm font-semibold tracking-wider uppercase rounded-lg hover:border-brand hover:bg-brand/10 hover:scale-[1.02] transition-all duration-200"
+                className="font-pixel inline-flex items-center border-2 border-brand/50 text-night-text px-6 py-3 text-xs uppercase hover:border-brand hover:text-brand transition-all"
               >
                 Contact
               </a>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
+      <motion.div
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 font-pixel text-[10px] text-night-muted flex flex-col items-center gap-2"
+        style={{ opacity }}
+      >
+        SCROLL
+        <span className="block w-px h-8 bg-gradient-to-b from-brand to-transparent animate-pulse" />
+      </motion.div>
     </section>
   );
 }

@@ -1,8 +1,16 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { motion } from "motion/react";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { useRef } from "react";
+import {
+  motion,
+  useMotionValueEvent,
+  useScroll,
+  useSpring,
+  useTransform,
+  type MotionValue,
+} from "motion/react";
+import { ArrowRight } from "lucide-react";
 import ResponsiveFluidBlobs from "./ResponsiveFluidBlobs";
 import SectionHeader from "./SectionHeader";
 
@@ -78,212 +86,244 @@ const projects: Project[] = [
   },
 ];
 
-function ProjectCard({ project, index }: { project: Project; index: number }) {
-  const isFeatured = project.featured;
+function ProjectMedia({
+  project,
+  videoRef,
+}: {
+  project: Project;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
+}) {
+  if (project.liveComponent)
+    return (
+      <>
+        <ResponsiveFluidBlobs style={{ borderRadius: "0", minHeight: "100%" }} />
+        <span className="font-pixel absolute bottom-2 right-2 bg-night/80 text-brand px-2 py-1 text-[10px]">
+          LIVE
+        </span>
+      </>
+    );
+  if (project.video)
+    return (
+      <video
+        ref={videoRef}
+        src={project.video}
+        loop
+        muted
+        playsInline
+        className="w-full h-full object-cover"
+      />
+    );
+  if (project.image)
+    return (
+      <img
+        src={project.image}
+        alt={project.title}
+        className="w-full h-full object-cover"
+      />
+    );
+  if (project.placeholder)
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-[radial-gradient(circle_at_50%_60%,rgba(255,159,28,0.18),transparent_60%)]">
+        <div className="text-center">
+          <div className="font-pixel text-6xl text-brand ember-glow mb-3">
+            {project.placeholder.icon}
+          </div>
+          <div className="font-pixel text-xs text-night-muted uppercase">
+            {project.placeholder.label}
+          </div>
+        </div>
+      </div>
+    );
+  return null;
+}
+
+// One project in the pinned showcase: it flies in from the depth, holds
+// at the centre while its slice of the scroll is active, then lifts away.
+function ProjectSlide({
+  project,
+  index,
+  total,
+  progress,
+}: {
+  project: Project;
+  index: number;
+  total: number;
+  progress: MotionValue<number>;
+}) {
+  const slice = 1 / total;
+  const mid = (index + 0.5) * slice;
+  const input = [mid - slice * 0.62, mid - slice * 0.22, mid + slice * 0.22, mid + slice * 0.62];
+  const side = index % 2 === 0 ? 1 : -1;
+
+  const opacity = useTransform(progress, input, [0, 1, 1, 0]);
+  const z = useTransform(progress, input, [-700, 0, 0, 250]);
+  const y = useTransform(progress, input, [140, 0, 0, -220]);
+  const rotateX = useTransform(progress, input, [28, 0, 0, -18]);
+  const rotateY = useTransform(progress, input, [side * 22, 0, 0, side * -8]);
+  const pointerEvents = useTransform(opacity, (v) => (v > 0.6 ? "auto" : "none"));
+  // Play the demo video only while its card is front and centre.
+  const videoRef = useRef<HTMLVideoElement>(null);
+  useMotionValueEvent(opacity, "change", (v) => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (v > 0.6 && video.paused) video.play().catch(() => {});
+    else if (v <= 0.6 && !video.paused) video.pause();
+  });
+  const external = project.href.startsWith("http");
 
   return (
-    <motion.div
-      className={`${isFeatured ? "md:col-span-2 lg:col-span-3" : ""} rounded-2xl border border-dashed border-black/5 dark:border-white/10 p-2 transition-all duration-300 hover:border-brand/30`}
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: 0.05 + index * 0.08, duration: 0.4 }}
+    <motion.article
+      className="absolute inset-0 flex items-center justify-center px-6"
+      style={{ opacity, z, y, rotateX, rotateY, pointerEvents }}
     >
       <a
         href={project.href}
-        target={project.href.startsWith("http") ? "_blank" : undefined}
-        rel={
-          project.href.startsWith("http") ? "noopener noreferrer" : undefined
-        }
-        className="block rounded-xl border border-black/5 dark:border-white/10 bg-black/2 dark:bg-white/3 overflow-hidden group"
+        target={external ? "_blank" : undefined}
+        rel={external ? "noopener noreferrer" : undefined}
+        className="panel group grid md:grid-cols-[1.25fr_1fr] w-full max-w-5xl overflow-hidden !bg-night/95 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] hover:border-brand/40 transition-colors"
       >
-        {isFeatured ? (
-          <div className="grid md:grid-cols-2">
-            {/* Image / Video */}
-            <div className="h-48 md:h-full overflow-hidden diagonal-stripes relative">
-              {project.video ? (
-                <video
-                  src={project.video}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover"
-                />
-              ) : project.image ? (
-                <img
-                  src={project.image}
-                  alt={project.title}
-                  className="w-full h-full object-cover orange-hover-effect"
-                />
-              ) : null}
-              <div className="absolute inset-0 bg-gradient-to-t from-brand/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            </div>
-            {/* Content */}
-            <div className="p-6 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-px w-4 bg-brand/40" />
-                  <span className="text-[10px] tracking-widest uppercase text-brand font-mono font-medium">
-                    {project.featuredLabel}
-                  </span>
-                </div>
-                <h3 className="text-xl font-semibold tracking-tight mb-3">
-                  {project.title}
-                </h3>
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm leading-relaxed whitespace-pre-line">
-                  {project.description}
-                </p>
-              </div>
-              <div className="mt-4">
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {project.tags.map((t) => (
-                    <span
-                      key={t}
-                      className="rounded-md border border-brand/15 bg-brand/5 px-2.5 py-0.5 text-xs text-neutral-500 dark:text-neutral-400"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 text-sm text-brand font-medium group-hover:gap-3 transition-all">
-                  {project.githubUrl ? "GitHub" : "Demo"}
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Image / Live / Placeholder */}
-            <div className="h-48 overflow-hidden relative diagonal-stripes">
-              {project.liveComponent ? (
-                <>
-                  <ResponsiveFluidBlobs
-                    style={{ borderRadius: "0", minHeight: "192px" }}
-                  />
-                  <div className="absolute bottom-2 right-2 rounded-md bg-black/60 backdrop-blur-sm text-white px-2 py-1 text-[10px] tracking-widest uppercase font-mono">
-                    Live
-                  </div>
-                </>
-              ) : project.video ? (
-                <>
-                  <video
-                    src={project.video}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
-                  {project.featuredLabel && (
-                    <div className="absolute top-2 right-2 rounded-md bg-brand/80 backdrop-blur-sm text-white px-2 py-1 text-[10px] tracking-widest uppercase font-mono">
-                      {project.featuredLabel}
-                    </div>
-                  )}
-                </>
-              ) : project.image ? (
-                <>
-                  <img
-                    src={project.image}
-                    alt={project.title}
-                    className="w-full h-full object-cover orange-hover-effect"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-brand/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                </>
-              ) : project.placeholder ? (
-                <div className="w-full h-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-4xl font-mono text-brand mb-2">
-                      {project.placeholder.icon}
-                    </div>
-                    <div className="text-xs text-neutral-400 tracking-widest uppercase">
-                      {project.placeholder.label}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-            </div>
+        <div className="relative aspect-video md:aspect-auto md:min-h-[360px] bg-night overflow-hidden">
+          <ProjectMedia project={project} videoRef={videoRef} />
+          <div className="absolute inset-0 bg-gradient-to-t from-brand/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+        </div>
 
-            {/* Content */}
-            <div className="p-5">
-              <h3 className="text-base font-semibold tracking-tight mb-2">
-                {project.title}
-              </h3>
-              <p className="text-neutral-500 dark:text-neutral-400 text-sm leading-relaxed mb-4">
-                {project.description}
-              </p>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {project.tags.map((t) => (
-                  <span
-                    key={t}
-                    className="rounded-md border border-brand/15 bg-brand/5 px-2.5 py-0.5 text-xs text-neutral-500 dark:text-neutral-400"
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-              {project.githubUrl && (
-                <div className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-brand transition-colors">
-                  <ExternalLink className="w-3 h-3" />
-                  GitHub
-                </div>
+        <div className="p-6 sm:p-8 flex flex-col justify-between gap-5">
+          <div>
+            <div className="font-pixel text-xs flex items-center gap-3 mb-3">
+              <span className="text-brand">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span className="text-night-muted">/ {String(total).padStart(2, "0")}</span>
+              {project.featuredLabel && (
+                <span className="ml-auto bg-brand text-night px-2 py-0.5 text-[10px]">
+                  {project.featuredLabel}
+                </span>
               )}
             </div>
-          </>
-        )}
+            <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-night-text mb-3">
+              {project.title}
+            </h3>
+            <p className="text-night-muted text-sm leading-relaxed whitespace-pre-line line-clamp-6">
+              {project.description}
+            </p>
+          </div>
+          <div>
+            <div className="flex flex-wrap gap-2 mb-5">
+              {project.tags.map((t) => (
+                <span
+                  key={t}
+                  className="font-pixel border border-night-line px-2 py-0.5 text-[10px] text-rain"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+            <span className="font-pixel inline-flex items-center gap-2 text-xs text-brand group-hover:gap-3 transition-all">
+              {project.githubUrl ? "GITHUB" : "DEMO"}
+              <ArrowRight className="w-3.5 h-3.5" />
+            </span>
+          </div>
+        </div>
       </a>
-    </motion.div>
+    </motion.article>
+  );
+}
+
+function ProgressRail({
+  progress,
+  total,
+}: {
+  progress: MotionValue<number>;
+  total: number;
+}) {
+  const height = useTransform(progress, [0, 1], ["0%", "100%"]);
+  return (
+    <div className="hidden lg:flex absolute right-8 top-1/2 -translate-y-1/2 h-56 flex-col items-center gap-3">
+      <span className="font-pixel text-[10px] text-night-muted">01</span>
+      <div className="relative w-px flex-1 bg-night-line">
+        <motion.div className="absolute top-0 left-0 w-px bg-brand" style={{ height }} />
+      </div>
+      <span className="font-pixel text-[10px] text-night-muted">
+        {String(total).padStart(2, "0")}
+      </span>
+    </div>
   );
 }
 
 export default function PortfolioSection() {
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end end"],
+  });
+  const progress = useSpring(scrollYProgress, {
+    stiffness: 120,
+    damping: 28,
+    restDelta: 0.0005,
+  });
+
   return (
-    <section id="portfolio" className="py-24">
-      <div className="max-w-6xl mx-auto px-6">
-        <SectionHeader
-          number="02"
-          label="Portfolio"
-          title="Portfolio"
-          description="私が開発したWebアプリケーションやツールをご紹介します。"
-        />
-
-        {/* Bento grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((project, index) => (
-            <ProjectCard key={project.title} project={project} index={index} />
-          ))}
+    <>
+      <section
+        id="portfolio"
+        ref={ref}
+        className="relative"
+        style={{ height: `${projects.length * 90 + 60}vh` }}
+      >
+        <div className="sticky top-0 h-screen overflow-hidden">
+          <div className="max-w-6xl mx-auto px-6 pt-24">
+            <SectionHeader
+              number="02"
+              label="Portfolio"
+              title="Portfolio"
+              description="私が開発したWebアプリケーションやツールをご紹介します。"
+            />
+          </div>
+          <div
+            className="absolute inset-x-0 top-56 bottom-4"
+            style={{ perspective: 1400 }}
+          >
+            {projects.map((project, index) => (
+              <ProjectSlide
+                key={project.title}
+                project={project}
+                index={index}
+                total={projects.length}
+                progress={progress}
+              />
+            ))}
+          </div>
+          <ProgressRail progress={progress} total={projects.length} />
         </div>
+      </section>
 
-        {/* GitHub CTA */}
+      {/* GitHub CTA */}
+      <div className="relative max-w-6xl mx-auto px-6 pb-24">
         <motion.div
-          className="mt-12 rounded-2xl border border-dashed border-black/5 dark:border-white/10 p-2"
-          initial={{ opacity: 0, y: 20 }}
+          className="panel p-8 flex flex-col sm:flex-row items-center justify-between gap-6"
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.2 }}
         >
-          <div className="rounded-xl border border-black/5 dark:border-white/10 bg-black/2 dark:bg-white/3 p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div>
-              <h3 className="text-xl font-semibold tracking-tight mb-2">
-                もっと詳しく見る
-              </h3>
-              <p className="text-neutral-500 dark:text-neutral-400 text-sm">
-                各プロジェクトの詳細な技術仕様や開発プロセスについては、GitHubリポジトリをご確認ください。
-              </p>
-            </div>
-            <a
-              href="https://github.com/musoukun"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="shrink-0 inline-flex items-center gap-2 bg-brand text-white px-6 py-3 text-sm font-semibold tracking-wider uppercase rounded-lg hover:bg-brand-hover hover:scale-[1.02] transition-all duration-200 shadow-sm hover:shadow-md"
-            >
-              GitHub Profile
-              <ArrowRight className="w-4 h-4" />
-            </a>
+          <div>
+            <h3 className="text-xl font-semibold tracking-tight mb-2 text-night-text">
+              もっと詳しく見る
+            </h3>
+            <p className="text-night-muted text-sm">
+              各プロジェクトの詳細な技術仕様や開発プロセスについては、GitHubリポジトリをご確認ください。
+            </p>
           </div>
+          <a
+            href="https://github.com/musoukun"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-pixel shrink-0 inline-flex items-center gap-2 bg-brand text-night px-6 py-3 text-xs uppercase shadow-[4px_4px_0_0_#03050d] hover:bg-brand-hover hover:-translate-y-0.5 transition-all"
+          >
+            GitHub Profile
+            <ArrowRight className="w-4 h-4" />
+          </a>
         </motion.div>
       </div>
-    </section>
+    </>
   );
 }

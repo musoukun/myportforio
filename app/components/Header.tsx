@@ -24,26 +24,27 @@ export default function Header() {
     <nav
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-stone-50/90 dark:bg-neutral-950/90 backdrop-blur-xl border-b border-neutral-200/50 dark:border-neutral-800/50 shadow-sm"
+          ? "bg-night/70 backdrop-blur-xl border-b border-night-line"
           : "bg-transparent"
       }`}
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <a
           href="#home"
-          className="text-xl font-bold tracking-tight hover:text-brand transition-colors"
+          className="font-pixel text-lg text-night-text hover:text-brand transition-colors"
         >
-          H.
+          H<span className="text-brand ember-glow">.</span>
         </a>
 
         {/* Desktop links */}
         <div className="hidden md:flex items-center gap-1">
-          {navItems.map((item) => (
+          {navItems.map((item, i) => (
             <a
               key={item.label}
               href={item.href}
-              className="px-4 py-2 text-xs tracking-[0.15em] uppercase text-neutral-500 dark:text-neutral-400 hover:text-brand hover:bg-brand/5 rounded-lg transition-all duration-200"
+              className="font-pixel px-4 py-2 text-xs uppercase text-night-muted hover:text-brand transition-colors duration-200"
             >
+              <span className="text-brand/60 mr-1.5">0{i + 1}</span>
               {item.label}
             </a>
           ))}
@@ -51,8 +52,9 @@ export default function Header() {
 
         {/* Mobile hamburger */}
         <button
-          className="md:hidden text-neutral-600 dark:text-neutral-400 p-2 hover:bg-brand/5 rounded-lg transition-colors"
+          className="md:hidden text-night-muted p-2 hover:text-brand transition-colors"
           onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="メニュー"
         >
           {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -60,15 +62,16 @@ export default function Header() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-stone-50/95 dark:bg-neutral-950/95 backdrop-blur-xl border-b border-neutral-200/50 dark:border-neutral-800/50">
+        <div className="md:hidden bg-night/95 backdrop-blur-xl border-b border-night-line">
           <div className="max-w-6xl mx-auto px-6 py-4 space-y-1">
-            {navItems.map((item) => (
+            {navItems.map((item, i) => (
               <a
                 key={item.label}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
-                className="block px-4 py-3 text-xs tracking-[0.15em] uppercase text-neutral-500 dark:text-neutral-400 hover:text-brand hover:bg-brand/5 rounded-lg transition-all"
+                className="font-pixel block px-4 py-3 text-xs uppercase text-night-muted hover:text-brand transition-colors"
               >
+                <span className="text-brand/60 mr-2">0{i + 1}</span>
                 {item.label}
               </a>
             ))}

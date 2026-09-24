@@ -27,7 +27,7 @@ export default function AboutSection() {
   return (
     <section
       id="about"
-      className="py-24 bg-white dark:bg-neutral-900/50"
+      className="relative py-24"
     >
       <div className="max-w-6xl mx-auto px-6">
         <SectionHeader
@@ -39,21 +39,21 @@ export default function AboutSection() {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Left — description + bars */}
           <motion.div
-            className="space-y-6 rounded-2xl border border-dashed border-black/5 dark:border-white/10 p-2"
+           
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
           >
-            <div className="rounded-xl border border-black/5 dark:border-white/10 bg-black/2 dark:bg-white/3 p-6 h-full">
-              <h3 className="text-xl font-semibold mb-4 tracking-tight">
+            <div className="panel p-6 h-full">
+              <h3 className="text-xl font-semibold mb-4 tracking-tight text-night-text">
                 モダンWebアプリケーション開発者
               </h3>
-              <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed text-sm mb-4">
+              <p className="text-night-muted leading-relaxed text-sm mb-4">
                 住宅基幹システムのWebアプリケーション運用からキャリアを開始し、Webアプリのスクラッチ開発の経験を積んできました。
                 最新の技術トレンドを常にキャッチアップし、効率的な開発を心がけています。
               </p>
-              <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed text-sm mb-6">
+              <p className="text-night-muted leading-relaxed text-sm mb-6">
                 現在は特にReact + TypeScript +
                 Next.jsを使用したフロントエンド開発と、
                 Mastraを活用したAIアプリケーション開発に力を入れてます。
@@ -61,7 +61,7 @@ export default function AboutSection() {
 
               {/* Skill bars */}
               <div className="space-y-4 pt-2">
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">
+                <p className="text-xs text-night-muted font-medium">
                   最近はもっぱらReact + Next.js + TypeScriptをつかってます。
                 </p>
                 {skills.map((s, idx) => (
@@ -76,11 +76,11 @@ export default function AboutSection() {
                       <span className="font-medium tracking-tight">
                         {s.label}
                       </span>
-                      <span className="text-neutral-400 font-mono text-xs">
+                      <span className="text-night-muted font-pixel text-xs">
                         {s.pct}%
                       </span>
                     </div>
-                    <div className="h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-night-line rounded-full overflow-hidden">
                       <motion.div
                         className={`h-1.5 rounded-full ${s.pct >= 50 ? "bg-brand" : "bg-brand/60"}`}
                         initial={{ width: 0 }}
@@ -99,16 +99,16 @@ export default function AboutSection() {
           <div className="space-y-4">
             {/* Dev style card */}
             <motion.div
-              className="rounded-2xl border border-dashed border-black/5 dark:border-white/10 p-2"
+             
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
             >
-              <div className="rounded-xl border border-black/5 dark:border-white/10 bg-black/2 dark:bg-white/3 p-6">
+              <div className="panel p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="h-px w-4 bg-brand/40" />
-                  <h4 className="text-lg font-semibold tracking-tight">
+                  <h4 className="text-lg font-semibold tracking-tight text-night-text">
                     開発スタイル
                   </h4>
                 </div>
@@ -116,7 +116,7 @@ export default function AboutSection() {
                   {devStyle.map((text, idx) => (
                     <motion.li
                       key={text}
-                      className="flex items-start gap-2.5 text-neutral-600 dark:text-neutral-400 text-sm"
+                      className="flex items-start gap-2.5 text-night-muted text-sm"
                       initial={{ opacity: 0, x: -5 }}
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true }}
@@ -132,16 +132,16 @@ export default function AboutSection() {
 
             {/* Specialties card */}
             <motion.div
-              className="rounded-2xl border border-dashed border-black/5 dark:border-white/10 p-2"
+             
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.3 }}
             >
-              <div className="rounded-xl border border-black/5 dark:border-white/10 bg-black/2 dark:bg-white/3 p-6">
+              <div className="panel p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="h-px w-4 bg-brand/40" />
-                  <h4 className="text-lg font-semibold tracking-tight">
+                  <h4 className="text-lg font-semibold tracking-tight text-night-text">
                     得意分野
                   </h4>
                 </div>
@@ -149,7 +149,7 @@ export default function AboutSection() {
                   {specialties.map((area, idx) => (
                     <motion.div
                       key={area}
-                      className="text-center p-3 rounded-lg bg-brand/5 border border-brand/10 text-sm text-neutral-600 dark:text-neutral-400 hover:bg-brand/10 hover:border-brand/20 transition-all duration-200"
+                      className="text-center p-3 rounded-lg bg-brand/5 border border-brand/10 text-sm text-night-muted hover:bg-brand/10 hover:border-brand/20 transition-all duration-200"
                       initial={{ opacity: 0, scale: 0.95 }}
                       whileInView={{ opacity: 1, scale: 1 }}
                       viewport={{ once: true }}

@@ -8,6 +8,13 @@
   --color-brand-hover: var(--c-brand-hover);
   --color-brand-soft: var(--c-brand-soft);
 
+  --color-night: var(--c-night);
+  --color-night-panel: var(--c-panel);
+  --color-night-line: var(--c-line);
+  --color-night-text: var(--c-text);
+  --color-night-muted: var(--c-muted);
+  --color-rain: var(--c-rain);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-mono: var(--font-geist-mono);
@@ -50,7 +57,9 @@
 /* ── Global ────────────────────────────────── */
 
 html {
+  position: relative; /* lets scroll-linked animations measure offsets */
   scroll-behavior: smooth;
+  background: var(--c-night);
 }
 
 body {
@@ -62,11 +71,29 @@ section {
   scroll-margin-top: 80px;
 }
 
-/* ── Dot-grid background ───────────────────── */
+.font-pixel {
+  font-family: var(--font-pixel), var(--font-geist-mono), monospace;
+  letter-spacing: 0.04em;
+}
 
-.dot-grid {
-  background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
-  background-size: 32px 32px;
+/* Frosted night panel that lets the 3D scene glow through */
+.panel {
+  border: 1px solid var(--c-line);
+  background: var(--c-panel);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 1rem;
+}
+
+.ember-glow {
+  text-shadow: 0 0 18px rgba(255, 159, 28, 0.55), 0 0 2px rgba(255, 209, 102, 0.9);
+}
+
+/* Pixel-art style frame: hard 2px border with a stepped shadow */
+.pixel-frame {
+  border: 2px solid #2a3558;
+  box-shadow: 4px 4px 0 0 #03050d, 0 0 0 2px #0b1024 inset;
+  image-rendering: pixelated;
 }
 
 /* ── Film grain overlay ────────────────────── */
@@ -77,91 +104,8 @@ body::before {
   inset: 0;
   pointer-events: none;
   z-index: 9999;
-  opacity: 0.02;
+  opacity: 0.03;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* ── Marquee animations ───────────────────── */
-
-@keyframes marquee-left {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-@keyframes marquee-right {
-  0% {
-    transform: translateX(-50%);
-  }
-  100% {
-    transform: translateX(0);
-  }
-}
-
-.animate-marquee-left {
-  animation: marquee-left 30s linear infinite;
-}
-
-.animate-marquee-right {
-  animation: marquee-right 25s linear infinite;
-}
-
-/* ── Diagonal stripes pattern ─────────────── */
-
-.diagonal-stripes {
-  background-image: repeating-linear-gradient(
-    45deg,
-    rgba(0, 0, 0, 0.02),
-    rgba(0, 0, 0, 0.02) 10px,
-    rgba(0, 0, 0, 0.04) 10px,
-    rgba(0, 0, 0, 0.04) 20px
-  );
-}
-
-.dark .diagonal-stripes {
-  background-image: repeating-linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.02),
-    rgba(255, 255, 255, 0.02) 10px,
-    rgba(255, 255, 255, 0.05) 10px,
-    rgba(255, 255, 255, 0.05) 20px
-  );
-}
-
-/* ── Orange hover effect ──────────────────── */
-
-.orange-hover-effect {
-  transition: all 0.5s ease;
-}
-
-.group:hover .orange-hover-effect {
-  filter: sepia(0.4) saturate(1.5) hue-rotate(-10deg) brightness(1.1);
-  transform: scale(1.05);
-}
-
-/* ── Gradient mesh animations ─────────────── */
-
-@keyframes gradient-mesh-1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, -30px) scale(1.1); }
-  66% { transform: translate(-20px, 20px) scale(0.9); }
-}
-
-@keyframes gradient-mesh-2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(-40px, 30px) scale(0.9); }
-  66% { transform: translate(20px, -20px) scale(1.1); }
-}
-
-.animate-gradient-mesh-1 {
-  animation: gradient-mesh-1 20s ease-in-out infinite;
-}
-
-.animate-gradient-mesh-2 {
-  animation: gradient-mesh-2 25s ease-in-out infinite;
 }
 
 /* ── Scrollbar ─────────────────────────────── */
@@ -171,7 +115,7 @@ body::before {
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--c-night);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -181,6 +125,17 @@ body::before {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--c-brand-hover);
+}
+
+/* ── Night palette ─────────────────────────── */
+
+:root {
+  --c-night: #070a18;
+  --c-panel: rgba(10, 14, 32, 0.72);
+  --c-line: rgba(142, 168, 210, 0.16);
+  --c-text: #e6ecf7;
+  --c-muted: #8f9cba;
+  --c-rain: #8ea8d2;
 }
 
 /* ── Theme tokens: Light ───────────────────── */
@@ -228,9 +183,9 @@ body::before {
 /* ── Theme tokens: Dark ────────────────────── */
 
 .dark {
-  --c-brand: #ff6b35;
-  --c-brand-hover: #ff8555;
-  --c-brand-soft: rgba(255, 107, 53, 0.12);
+  --c-brand: #ff9f1c;
+  --c-brand-hover: #ffb347;
+  --c-brand-soft: rgba(255, 159, 28, 0.12);
 
   --background: 0 0% 5%;
   --foreground: 30 10% 93%;

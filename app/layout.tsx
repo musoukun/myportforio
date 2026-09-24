@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
-import { Geist_Mono } from "next/font/google";
+import { DotGothic16, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "./theme-provider";
 
 const outfit = Outfit({
 	variable: "--font-outfit",
@@ -13,6 +11,12 @@ const outfit = Outfit({
 const geistMono = Geist_Mono({
 	variable: "--font-geist-mono",
 	subsets: ["latin"],
+});
+
+const pixel = DotGothic16({
+	variable: "--font-pixel",
+	subsets: ["latin"],
+	weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -27,11 +31,11 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="ja">
+		<html lang="ja" className="dark">
 			<body
-				className={`${outfit.variable} ${geistMono.variable} antialiased`}
+				className={`${outfit.variable} ${geistMono.variable} ${pixel.variable} antialiased`}
 			>
-				<ThemeProvider>{children}</ThemeProvider>
+				{children}
 			</body>
 		</html>
 	);

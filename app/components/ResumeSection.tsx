@@ -75,22 +75,22 @@ const certifications = [
 
 export default function ResumeSection() {
   return (
-    <section id="resume" className="py-24 bg-white dark:bg-neutral-900/50">
+    <section id="resume" className="relative py-24">
       <div className="max-w-6xl mx-auto px-6">
         <SectionHeader number="03" label="Resume" title="Resume" />
 
         <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-6">
           {/* Experience */}
           <motion.div
-            className="rounded-2xl border border-dashed border-black/5 dark:border-white/10 p-2"
+           
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
           >
-            <div className="rounded-xl border border-black/5 dark:border-white/10 bg-black/2 dark:bg-white/3 p-6 h-full">
-              <h3 className="text-lg font-semibold mb-8 flex items-center gap-3">
-                <span className="w-8 h-8 bg-brand text-white flex items-center justify-center rounded-lg text-sm">
+            <div className="panel p-6 h-full">
+              <h3 className="text-lg font-semibold mb-8 flex items-center gap-3 text-night-text">
+                <span className="w-8 h-8 bg-brand text-night flex items-center justify-center text-sm shadow-[3px_3px_0_0_#03050d]">
                   <Briefcase className="w-4 h-4" />
                 </span>
                 職歴
@@ -100,7 +100,7 @@ export default function ResumeSection() {
                 {experience.map((exp, idx) => (
                   <motion.div
                     key={exp.title}
-                    className={`border-l-2 pl-6 ${exp.current ? "border-brand" : "border-neutral-200 dark:border-neutral-700"}`}
+                    className={`border-l-2 pl-6 ${exp.current ? "border-brand" : "border-night-line"}`}
                     initial={{ opacity: 0, x: -10 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
@@ -110,10 +110,10 @@ export default function ResumeSection() {
                       {exp.title}
                     </h4>
                     <p className="text-brand text-sm mt-1">{exp.company}</p>
-                    <p className="text-neutral-400 text-xs font-mono mt-1">
+                    <p className="text-night-muted text-xs font-mono mt-1">
                       {exp.period}
                     </p>
-                    <ul className="mt-3 space-y-1.5 text-neutral-600 dark:text-neutral-400 text-sm">
+                    <ul className="mt-3 space-y-1.5 text-night-muted text-sm">
                       {exp.items.map((item) => (
                         <li key={item}>{item}</li>
                       ))}
@@ -126,15 +126,15 @@ export default function ResumeSection() {
 
           {/* Skills */}
           <motion.div
-            className="rounded-2xl border border-dashed border-black/5 dark:border-white/10 p-2"
+           
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
           >
-            <div className="rounded-xl border border-black/5 dark:border-white/10 bg-black/2 dark:bg-white/3 p-6 h-full">
-              <h3 className="text-lg font-semibold mb-8 flex items-center gap-3">
-                <span className="w-8 h-8 bg-brand text-white flex items-center justify-center rounded-lg text-sm">
+            <div className="panel p-6 h-full">
+              <h3 className="text-lg font-semibold mb-8 flex items-center gap-3 text-night-text">
+                <span className="w-8 h-8 bg-brand text-night flex items-center justify-center text-sm shadow-[3px_3px_0_0_#03050d]">
                   <Code2 className="w-4 h-4" />
                 </span>
                 技術スキル
@@ -150,14 +150,14 @@ export default function ResumeSection() {
                     viewport={{ once: true }}
                     transition={{ delay: 0.3 + idx * 0.08 }}
                   >
-                    <h4 className="text-sm font-semibold mb-3 text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                    <h4 className="text-sm font-semibold mb-3 text-night-muted uppercase tracking-wider">
                       {cat.title}
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {cat.items.map((skill) => (
                         <span
                           key={skill}
-                          className="rounded-md border border-brand/15 bg-white dark:bg-neutral-800 px-2.5 py-1 text-xs hover:border-brand/30 hover:bg-brand/5 transition-all duration-200"
+                          className="rounded-md border border-brand/15 bg-night/60 px-2.5 py-1 text-xs hover:border-brand/30 hover:bg-brand/5 transition-all duration-200"
                         >
                           {skill}
                         </span>
@@ -171,15 +171,15 @@ export default function ResumeSection() {
 
           {/* Certifications */}
           <motion.div
-            className="rounded-2xl border border-dashed border-black/5 dark:border-white/10 p-2"
+           
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.3 }}
           >
-            <div className="rounded-xl border border-black/5 dark:border-white/10 bg-black/2 dark:bg-white/3 p-6 h-full">
-              <h3 className="text-lg font-semibold mb-8 flex items-center gap-3">
-                <span className="w-8 h-8 bg-brand text-white flex items-center justify-center rounded-lg text-sm">
+            <div className="panel p-6 h-full">
+              <h3 className="text-lg font-semibold mb-8 flex items-center gap-3 text-night-text">
+                <span className="w-8 h-8 bg-brand text-night flex items-center justify-center text-sm shadow-[3px_3px_0_0_#03050d]">
                   <Award className="w-4 h-4" />
                 </span>
                 資格・認定
@@ -198,7 +198,7 @@ export default function ResumeSection() {
                     <h5 className="font-semibold text-sm tracking-tight">
                       {cert.name}
                     </h5>
-                    <p className="text-xs text-neutral-400 mt-1">
+                    <p className="text-xs text-night-muted mt-1">
                       {cert.issuer}
                     </p>
                   </motion.div>
