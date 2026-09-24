@@ -3,7 +3,7 @@
 import { motion, useScroll, useTransform } from "motion/react";
 
 const stats = [
-  { value: "7+", label: "Years Dev" },
+  { value: "8+", label: "Years Dev" },
   { value: "3+", label: "Years Ops" },
 ];
 
@@ -52,7 +52,7 @@ export default function HeroSection() {
           >
             React + Next.js + TypeScript
             を活用したモダンなWebアプリケーション開発。
-            7年間の開発経験と3年間の運用保守経験を持つ開発者です。
+            8年間の開発経験と3年間の運用保守経験を持つ開発者です。
           </motion.p>
 
           <motion.div
@@ -66,7 +66,7 @@ export default function HeroSection() {
                 <span className="font-pixel text-3xl sm:text-4xl text-brand ember-glow">
                   {s.value}
                 </span>
-                <p className="font-pixel text-[10px] uppercase text-night-muted mt-1">
+                <p className="text-xs font-bold uppercase tracking-wider text-white mt-1 [text-shadow:0_1px_3px_rgba(0,0,0,0.9)]">
                   {s.label}
                 </p>
               </div>
@@ -80,7 +80,7 @@ export default function HeroSection() {
               </a>
               <a
                 href="#contact"
-                className="font-pixel inline-flex items-center border-2 border-brand/50 text-night-text px-6 py-3 text-xs uppercase hover:border-brand hover:text-brand transition-all"
+                className="font-pixel inline-flex items-center bg-night/85 border-2 border-white text-white font-bold px-6 py-3 text-xs uppercase shadow-[4px_4px_0_0_#03050d] hover:border-brand hover:text-brand hover:-translate-y-0.5 transition-all"
               >
                 Contact
               </a>
