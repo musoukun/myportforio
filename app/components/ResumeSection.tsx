@@ -6,10 +6,22 @@ import SectionHeader from "./SectionHeader";
 
 const experience = [
   {
+    title: "AI × 不動産データ基盤の開発",
+    company: "生成AIスタートアップ",
+    period: "2026.06 — Present",
+    current: true,
+    items: [
+      "出店判断を助ける不動産Webサービスの開発",
+      "Next.js と Python（FastAPI）の両方を担当",
+      "要望から実装・検証まで回すAI駆動開発の仕組みを構築",
+      "Playwright で自動テストを整備",
+    ],
+  },
+  {
     title: "Webアプリ開発",
     company: "製造業向けシステムインテグレータ",
-    period: "2023.10 — Present",
-    current: true,
+    period: "2023.10 — 2026.05",
+    current: false,
     items: [
       "Nextjs or React + TypeScript + Express での開発",
       "Playwright を用いたE2Eテスト導入",
