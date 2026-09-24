@@ -39,8 +39,11 @@ const C = {
 	tower: hex("#8d95a3"),
 	towerDark: hex("#6c7482"),
 	deck: hex("#c9cfd8"),
-	umeda: hex("#a3b6ce"),
+	cap: hex("#cfe3ec"),
+	umeda: hex("#6f93c2"),
 	umedaLine: hex("#8093ad"),
+	umedaPier: hex("#e4e8ee"),
+	garden: hex("#dfe3e8"),
 	harukas: hex("#7f9cc0"),
 	harukasLine: hex("#a9bfda"),
 	harukasSide: hex("#6483a8"),
@@ -233,47 +236,121 @@ function osakaCastle(s: Scene, cx: number) {
 	rect(s, cx - 3, y + 8, 6, 1, C.gold, FLOODLIT);
 }
 
+// Tsutenkaku, top to bottom: antenna, stacked round observation decks,
+// a neck narrowing below them, the diamond-shaped truss wings, a lattice body
+// that widens toward the ground, and arched legs spreading onto the street.
+const TSUTEN = { x: 206, neck: 50, wings: 63, body: 68, legs: 118 };
+const tsutenBodyHalf = (y: number) => Math.round(4 + ((y - TSUTEN.body) / (TSUTEN.legs - TSUTEN.body)) * 7);
+
 function tsutenkaku(s: Scene, cx: number) {
-	line(s, cx - 10, BASE, cx - 4, 112, C.towerDark, NEAR, 2);
-	line(s, cx + 9, BASE, cx + 3, 112, C.towerDark, NEAR, 2);
-	rect(s, cx - 7, 124, 14, 1, C.towerDark, NEAR);
-	for (let y = 66; y < 112; y++)
-		for (let x = cx - 4; x <= cx + 4; x++) {
-			const lattice = (x - cx + y) % 4 === 0 || (x - cx - y) % 4 === 0 || Math.abs(x - cx) === 4;
-			put(s, x, y, lattice ? C.tower : C.towerDark, NEAR);
+	const L = NEAR;
+	// antenna, cap and decks
+	line(s, cx, 30, cx, 36, C.towerDark, L);
+	rect(s, cx - 2, 36, 5, 3, C.cap, L);
+	rect(s, cx - 4, 39, 9, 2, C.deck, L);
+	for (const [y, h] of [[41, 4], [46, 3]]) {
+		rect(s, cx - 6, y, 13, h, C.deck, L);
+		for (let x = cx - 5; x <= cx + 5; x += 2) rect(s, x, y + 1, 1, h - 2, C.slit, L);
+	}
+	rect(s, cx - 6, 45, 13, 1, C.towerDark, L);
+	rect(s, cx - 5, 49, 11, 1, C.gold, L);
+	// neck narrowing under the decks  \ /
+	for (let y = TSUTEN.neck; y < TSUTEN.wings - 3; y++) {
+		const hw = Math.round(5 - ((y - TSUTEN.neck) / 10) * 3);
+		put(s, cx - hw, y, C.tower, L);
+		put(s, cx + hw, y, C.tower, L);
+		if (y % 3 === 0) rect(s, cx - hw, y, hw * 2 + 1, 1, C.towerDark, L);
+	}
+	// diamond truss wings  <>
+	const wy = TSUTEN.wings;
+	for (const side of [-1, 1]) {
+		line(s, cx + side * 2, wy - 5, cx + side * 13, wy, C.tower, L);
+		line(s, cx + side * 13, wy, cx + side * 4, TSUTEN.body, C.tower, L);
+		line(s, cx + side * 3, wy - 2, cx + side * 9, wy + 2, C.towerDark, L);
+	}
+	rect(s, cx - 13, wy, 27, 1, C.towerDark, L);
+	// lattice body widening downward  /\ , see-through with a tall dark sign panel
+	for (let y = TSUTEN.body; y < TSUTEN.legs; y++) {
+		const hw = tsutenBodyHalf(y);
+		put(s, cx - hw, y, C.tower, L);
+		put(s, cx + hw, y, C.tower, L);
+		const bay = (y - TSUTEN.body) % 8;
+		if (bay === 0) rect(s, cx - hw, y, hw * 2 + 1, 1, C.tower, L);
+		const k = Math.round((bay / 8) * hw);
+		put(s, cx - hw + k, y, C.towerDark, L);
+		put(s, cx + hw - k, y, C.towerDark, L);
+	}
+	rect(s, cx - 2, 74, 5, 36, C.slit, L);
+	// arched legs spreading onto the street  \__/  then  /   \
+	rect(s, cx - 12, TSUTEN.legs, 25, 2, C.towerDark, L);
+	for (let y = TSUTEN.legs + 2; y < BASE; y++) {
+		const outer = Math.round(12 + ((y - TSUTEN.legs) / (BASE - TSUTEN.legs)) * 4);
+		const rise = (y - TSUTEN.legs - 2) / (BASE - TSUTEN.legs - 2);
+		const inner = Math.round(7 * Math.sqrt(clamp01(rise * 1.6)));
+		for (let x = cx - outer; x <= cx + outer; x++) {
+			const d = Math.abs(x - cx);
+			if (d < inner) continue;
+			put(s, x, y, d === outer || d === inner ? C.tower : C.towerDark, L);
 		}
-	rect(s, cx - 7, 57, 15, 9, C.deck, NEAR);
-	rect(s, cx - 7, 60, 15, 2, C.slit, NEAR);
-	rect(s, cx - 2, 48, 5, 9, C.tower, NEAR);
-	rect(s, cx - 3, 44, 7, 4, C.deck, NEAR);
-	line(s, cx, 36, cx, 44, C.towerDark, NEAR);
+	}
 }
+
+// Umeda Sky Building: two slim glass towers with an open atrium between them,
+// joined at the top by the Floating Garden - a white band spanning both towers
+// with a large round opening over the atrium whose rim hangs below the band.
+// A mid-height bridge and diagonal see-through escalators cross the atrium.
+const UMEDA = { x: 224, tower: 13, gap: 12, top: 52, band: 10 };
 
 function umedaSky(s: Scene, x: number) {
-	for (const tx of [x, x + 26]) {
-		rect(s, tx, 62, 12, BASE - 62, C.umeda, NEAR);
-		for (let y = 64; y < BASE; y += 2) rect(s, tx, y, 12, 1, C.umedaLine, NEAR);
-		windowGrid(s, tx + 2, 66, 9, BASE - 70, 3, 4, tx);
+	const L = NEAR;
+	const { tower, gap, top, band } = UMEDA;
+	const right = x + tower * 2 + gap;
+	const bandBottom = top + band;
+	for (const tx of [x, x + tower + gap]) {
+		rect(s, tx, bandBottom, tower, BASE - bandBottom, C.umeda, L);
+		for (let y = bandBottom + 1; y < BASE; y += 3) rect(s, tx, y, tower, 1, C.umedaLine, L);
+		const outer = tx === x ? tx : tx + tower - 2;
+		const inner = tx === x ? tx + tower - 1 : tx;
+		rect(s, outer, bandBottom, 2, BASE - bandBottom, C.umedaPier, L);
+		rect(s, inner, bandBottom, 1, BASE - bandBottom, C.umedaPier, L);
+		windowGrid(s, tx + 3, bandBottom + 3, tower - 5, BASE - bandBottom - 6, 3, 3, tx);
 	}
-	// the floating garden with its ring-shaped hole
-	for (let y = 55; y < 64; y++)
-		for (let xx = x; xx < x + 38; xx++)
-			if (Math.hypot(xx - (x + 19), y - 59.5) > 4.5) put(s, xx, y, y < 57 ? C.deck : C.umeda, NEAR);
-	line(s, x + 12, 96, x + 26, 84, C.umedaLine, NEAR);
+	// atrium: slim lift frame, the 22nd-floor bridge and the escalator tubes
+	const mid = x + tower + gap / 2;
+	rect(s, Math.round(mid) - 1, bandBottom + 4, 2, BASE - bandBottom - 4, C.towerDark, L);
+	rect(s, x + tower, 100, gap, 3, C.towerDark, L);
+	for (let xx = x + tower; xx < x + tower + gap; xx += 2) put(s, xx, 101, C.tower, L);
+	line(s, x + tower + 1, 99, mid + 3, bandBottom + 5, C.deck, L, 2);
+	// the Floating Garden band with its round opening
+	const cx = mid - 0.5, cy = bandBottom - 1, r = 5.5;
+	for (let y = top; y < bandBottom + 5; y++)
+		for (let xx = x; xx < right; xx++) {
+			const d = Math.hypot(xx - cx, y - cy);
+			const inBand = y < bandBottom;
+			if (d < r) continue; // open to the sky
+			if (inBand) put(s, xx, y, y === top + 3 ? C.slit : C.garden, L);
+			else if (d < r + 1.6) put(s, xx, y, C.garden, L); // rim hanging below the band
+		}
+	// rooftop parapet and small plant rooms
+	rect(s, x + 2, top - 1, right - x - 4, 1, C.umedaLine, L);
+	rect(s, x + 4, top - 3, 5, 2, C.garden, L);
+	rect(s, right - 9, top - 3, 5, 2, C.garden, L);
 }
 
-function abenoHarukas(s: Scene, x: number) {
-	const steps = [
-		{ x: x + 2, y: 84, w: 34 },
-		{ x: x + 6, y: 56, w: 28 },
-		{ x: x + 11, y: 30, w: 20 },
-	];
+// Abeno Harukas: three stacked glass volumes that step back on the left,
+// with the right face rising in one straight line.
+const HARUKAS = { right: 301, steps: [{ y: 84, w: 35 }, { y: 56, w: 27 }, { y: 30, w: 20 }] };
+
+function abenoHarukas(s: Scene) {
+	const { right, steps } = HARUKAS;
 	steps.forEach((st, i) => {
+		const x = right - st.w;
 		const bottom = i === 0 ? BASE : steps[i - 1].y;
-		rect(s, st.x, st.y, st.w, bottom - st.y, C.harukas, NEAR);
-		for (let xx = st.x + 1; xx < st.x + st.w - 3; xx += 3) rect(s, xx, st.y, 1, bottom - st.y, C.harukasLine, NEAR);
-		rect(s, st.x + st.w - 3, st.y, 3, bottom - st.y, C.harukasSide, NEAR);
-		windowGrid(s, st.x + 2, st.y + 2, st.w - 6, bottom - st.y - 4, 3, 3, st.y);
+		rect(s, x, st.y, st.w, bottom - st.y, C.harukas, NEAR);
+		for (let xx = x + 1; xx < right - 3; xx += 3) rect(s, xx, st.y, 1, bottom - st.y, C.harukasLine, NEAR);
+		rect(s, right - 3, st.y, 3, bottom - st.y, C.harukasSide, NEAR);
+		rect(s, x, st.y, st.w, 1, C.harukasLine, NEAR);
+		windowGrid(s, x + 2, st.y + 2, st.w - 6, bottom - st.y - 4, 3, 3, st.y);
 	});
 }
 
@@ -311,14 +388,14 @@ function buildCity(): Scene {
 	const s: Scene = { col: new Uint8ClampedArray(W * H * 4), layer: new Uint8Array(W * H), windows: [] };
 	skyline(s, FAR, C.far, 20, 58, 11);
 	skyline(s, MID, C.mid, 14, 44, 37);
-	umedaSky(s, 212);
-	abenoHarukas(s, 262);
-	tsutenkaku(s, 184);
+	umedaSky(s, UMEDA.x);
+	abenoHarukas(s);
+	tsutenkaku(s, TSUTEN.x);
 	osakaCastle(s, 128);
 	line(s, WHEEL.x, WHEEL.y, WHEEL.x - 12, BASE, C.steel, NEAR, 2);
 	line(s, WHEEL.x, WHEEL.y, WHEEL.x + 12, BASE, C.steel, NEAR, 2);
 	crabShop(s, 70);
-	publicHall(s, 150);
+	publicHall(s, 146);
 	// riverbank, river and promenade
 	rect(s, 0, BASE, W, RIVER_TOP - BASE, C.edge, NEAR);
 	rect(s, 0, RIVER_TOP, W, RIVER_BOTTOM - RIVER_TOP, C.water, WATER);
@@ -556,19 +633,32 @@ export function createDiorama() {
 		// landmark illumination
 		glow.fill(0);
 		if (night > 0) {
-			const tx = 184;
+			// Tsutenkaku: neon along its outline, a lit sign, glowing decks and a
+			// colour-changing light on the cap
+			const tx = TSUTEN.x;
 			const band = [C.neonPink, C.neonOrange, C.neonBlue][Math.floor(cycle(t, 12, 0) * 3)];
-			for (let y = 67; y < 111; y += 1) {
-				px(tx - 4, y, C.neonPink, night * 0.85);
-				px(tx + 4, y, C.neonBlue, night * 0.85);
+			for (let y = TSUTEN.body; y < TSUTEN.legs; y++) {
+				const hw = tsutenBodyHalf(y);
+				px(tx - hw, y, C.neonPink, night * 0.85);
+				px(tx + hw, y, C.neonBlue, night * 0.85);
 			}
-			for (let x = tx - 7; x <= tx + 7; x++) px(x, 60, C.neonOrange, night);
-			for (let x = tx - 3; x <= tx + 3; x++) for (let y = 44; y < 48; y++) px(x, y, band, night);
-			addGlow(tx, 46, 16, night * 0.6);
-			for (let x = 273; x < 293; x++) px(x, 30, C.whiteLight, night);
-			addGlow(283, 31, 18, night * 0.5);
-			for (let x = 212; x < 250; x++) px(x, 55, C.neonBlue, night * 0.8);
-			addGlow(231, 58, 16, night * 0.4);
+			for (let k = 0; k <= 11; k++) {
+				const y = TSUTEN.wings - 5 + (k * 5) / 11;
+				px(tx - 2 - k, y, C.neonOrange, night);
+				px(tx + 2 + k, y, C.neonOrange, night);
+			}
+			for (let y = 75; y < 109; y++) px(tx, y, C.warmLight, night * (0.6 + 0.4 * ((y + Math.floor(cycle(t, 40, 0) * 8)) % 8 < 4 ? 1 : 0)));
+			for (const y of [42, 43, 47]) for (let x = tx - 5; x <= tx + 5; x += 2) px(x, y, C.whiteLight, night);
+			for (let x = tx - 2; x <= tx + 2; x++) for (let y = 36; y < 39; y++) px(x, y, band, night);
+			addGlow(tx, 40, 16, night * 0.6);
+			const hTop = HARUKAS.steps[2];
+			for (let x = HARUKAS.right - hTop.w; x < HARUKAS.right; x++) px(x, hTop.y, C.whiteLight, night);
+			addGlow(HARUKAS.right - hTop.w / 2, hTop.y + 1, 18, night * 0.5);
+			// the Floating Garden's rim and roof line glow blue
+			const ucx = UMEDA.x + UMEDA.tower + UMEDA.gap / 2 - 0.5, ucy = UMEDA.top + UMEDA.band - 1;
+			for (let a = 0; a < TAU; a += 0.1) px(ucx + Math.cos(a) * 6.2, ucy + Math.sin(a) * 6.2, C.neonBlue, night * 0.9);
+			for (let x = UMEDA.x + 2; x < UMEDA.x + UMEDA.tower * 2 + UMEDA.gap - 2; x++) px(x, UMEDA.top - 1, C.neonBlue, night * 0.8);
+			addGlow(ucx, ucy, 16, night * 0.4);
 			for (const lx of LAMPS) {
 				for (let x = lx - 1; x <= lx + 1; x++) px(x, 156, C.warmLight, night);
 				addGlow(lx, 158, 20, night * 0.9);
