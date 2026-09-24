@@ -23,7 +23,21 @@ export default function HeroSection() {
         className="relative h-full max-w-6xl mx-auto px-6 flex items-start pt-28 sm:pt-32"
         style={{ y, opacity }}
       >
-        <div className="space-y-6 max-w-2xl min-w-0 w-full [text-shadow:0_2px_12px_rgba(7,10,24,0.55)]">
+        <div className="space-y-6 max-w-2xl min-w-0 w-full [text-shadow:0_1px_3px_rgba(7,10,24,0.95),0_2px_12px_rgba(7,10,24,0.7)]">
+          <motion.p
+            className="inline-flex items-start gap-2 rounded-lg border border-brand/60 bg-night/80 px-4 py-2.5 text-sm sm:text-base font-semibold leading-snug text-white shadow-[4px_4px_0_0_#03050d] [text-shadow:none]"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <span className="text-brand">✦</span>
+            <span>
+              背景の街のアニメーションとサイトは、画像を使わずプログラムで作成しました
+              <span className="font-pixel text-xs text-brand ml-1 whitespace-nowrap">
+                （Next.js / TypeScript / three.js）
+              </span>
+            </span>
+          </motion.p>
           <motion.p
             className="font-pixel text-xs sm:text-sm text-brand flex items-center gap-3"
             initial={{ opacity: 0, x: -10 }}
@@ -45,7 +59,7 @@ export default function HeroSection() {
           </motion.h1>
 
           <motion.p
-            className="text-sm sm:text-base text-night-text/80 max-w-lg leading-relaxed"
+            className="text-sm sm:text-base font-medium text-white max-w-lg leading-relaxed"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
@@ -74,7 +88,7 @@ export default function HeroSection() {
             <div className="flex gap-3">
               <a
                 href="#portfolio"
-                className="font-pixel inline-flex items-center bg-brand text-night px-6 py-3 text-xs uppercase shadow-[4px_4px_0_0_#03050d] hover:bg-brand-hover hover:-translate-y-0.5 transition-all"
+                className="font-pixel inline-flex items-center bg-brand text-night [text-shadow:none] px-6 py-3 text-xs uppercase shadow-[4px_4px_0_0_#03050d] hover:bg-brand-hover hover:-translate-y-0.5 transition-all"
               >
                 作品を見る
               </a>
@@ -90,11 +104,16 @@ export default function HeroSection() {
       </motion.div>
 
       <motion.div
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 font-pixel text-[10px] text-night-muted flex flex-col items-center gap-2"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2"
         style={{ opacity }}
       >
-        SCROLL
-        <span className="block w-px h-8 bg-gradient-to-b from-brand to-transparent animate-pulse" />
+        <a
+          href="#about"
+          className="font-pixel flex flex-col items-center gap-1 rounded-full border-2 border-white/80 bg-night/75 px-5 py-2 text-sm text-white shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:border-brand hover:text-brand transition-colors"
+        >
+          SCROLL!
+          <span className="text-xl leading-none text-brand animate-bounce">↓</span>
+        </a>
       </motion.div>
     </section>
   );

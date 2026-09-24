@@ -25,7 +25,7 @@ export default function Header() {
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
         scrolled
           ? "bg-night/70 backdrop-blur-xl border-b border-night-line"
-          : "bg-transparent"
+          : "bg-gradient-to-b from-night/75 to-transparent"
       }`}
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -42,9 +42,9 @@ export default function Header() {
             <a
               key={item.label}
               href={item.href}
-              className="font-pixel px-4 py-2 text-xs uppercase text-night-muted hover:text-brand transition-colors duration-200"
+              className="font-pixel px-4 py-2 text-xs font-bold uppercase text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.8)] hover:text-brand transition-colors duration-200"
             >
-              <span className="text-brand/60 mr-1.5">0{i + 1}</span>
+              <span className="text-brand mr-1.5">0{i + 1}</span>
               {item.label}
             </a>
           ))}
@@ -52,7 +52,7 @@ export default function Header() {
 
         {/* Mobile hamburger */}
         <button
-          className="md:hidden text-night-muted p-2 hover:text-brand transition-colors"
+          className="md:hidden text-white p-2 hover:text-brand transition-colors"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="メニュー"
         >
@@ -69,9 +69,9 @@ export default function Header() {
                 key={item.label}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
-                className="font-pixel block px-4 py-3 text-xs uppercase text-night-muted hover:text-brand transition-colors"
+                className="font-pixel block px-4 py-3 text-xs font-bold uppercase text-white hover:text-brand transition-colors"
               >
-                <span className="text-brand/60 mr-2">0{i + 1}</span>
+                <span className="text-brand mr-2">0{i + 1}</span>
                 {item.label}
               </a>
             ))}
