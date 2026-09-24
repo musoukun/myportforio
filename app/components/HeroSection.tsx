@@ -54,8 +54,7 @@ export default function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           >
-            HATA
-            <span className="text-brand ember-glow">KEYAMA</span>
+            HATAKEYAMA
           </motion.h1>
 
           <motion.p
@@ -77,7 +76,7 @@ export default function HeroSection() {
           >
             {stats.map((s) => (
               <div key={s.label}>
-                <span className="font-pixel text-3xl sm:text-4xl text-brand ember-glow">
+                <span className="font-pixel text-3xl sm:text-4xl font-bold text-white [text-shadow:0_2px_4px_rgba(7,10,24,0.95),0_0_14px_rgba(7,10,24,0.8)]">
                   {s.value}
                 </span>
                 <p className="text-xs font-bold uppercase tracking-wider text-white mt-1 [text-shadow:0_1px_3px_rgba(0,0,0,0.9)]">
