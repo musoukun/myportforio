@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 
 interface Message {
 	id: number;
-	sender: "user" | "ai" | "hatakeyama";
+	sender: "user" | "hatakeyama";
 	content: string;
 	timestamp: Date;
 }
@@ -56,7 +56,6 @@ export default function ChatDemo() {
 				},
 				currentIndex === 0 ? 1000 : 1500
 			);
-
 			return () => clearTimeout(timer);
 		}
 	}, [currentIndex]);
@@ -69,116 +68,99 @@ export default function ChatDemo() {
 
 	return (
 		<div className="w-full mx-auto">
-			{/* AI Chat Demo Header */}
 			<div className="text-center mb-3">
-				<h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
+				<h3 className="text-base sm:text-lg font-semibold mb-1">
 					私について
 				</h3>
 			</div>
 
-			<div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
-				{/* Chat Header - モバイル対応 */}
-				<div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 sm:p-6">
-					<div className="flex justify-between items-center">
-						<div className="flex items-center space-x-3 sm:space-x-4">
-							<div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-400 rounded-full animate-pulse"></div>
-							<span className="font-semibold text-sm sm:text-lg">
-								AI Assistant
-							</span>
-						</div>
-						<button
-							onClick={resetDemo}
-							className="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-blue-950 text-xs sm:text-sm transition-all duration-300"
-						>
-							リセット
-						</button>
+			<div className="border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden">
+				{/* Header */}
+				<div className="bg-neutral-100 dark:bg-neutral-800 px-4 sm:px-6 py-3 flex justify-between items-center border-b border-neutral-200 dark:border-neutral-700">
+					<div className="flex items-center gap-3">
+						<div className="w-2 h-2 bg-brand rounded-full" />
+						<span className="text-xs tracking-widest uppercase text-neutral-500 dark:text-neutral-400 font-mono">
+							Chat Demo
+						</span>
 					</div>
+					<button
+						onClick={resetDemo}
+						className="text-xs text-neutral-400 hover:text-brand transition-colors font-mono uppercase tracking-wider"
+					>
+						Reset
+					</button>
 				</div>
 
-				{/* Chat Messages Area - モバイル対応 */}
-				<div className="h-[20rem] sm:h-[24rem] lg:h-[28rem] overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+				{/* Messages */}
+				<div className="h-[20rem] sm:h-[24rem] lg:h-[28rem] overflow-y-auto p-4 sm:p-6 space-y-3">
 					{messages.map((message) => (
 						<div
 							key={message.id}
 							className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"} animate-fade-in`}
 						>
 							<div
-								className={`max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg px-3 sm:px-4 lg:px-5 py-3 sm:py-4 rounded-2xl shadow-lg ${
+								className={`max-w-[80%] px-4 py-3 text-sm ${
 									message.sender === "user"
-										? "bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-br-sm"
-										: "bg-white dark:bg-gray-700 text-gray-800 dark:text-white border border-gray-200 dark:border-gray-600 rounded-bl-sm"
+										? "bg-brand/10 dark:bg-brand/15 text-neutral-900 dark:text-neutral-100 border border-brand/20"
+										: "bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700"
 								}`}
 							>
-								<div className="flex items-center space-x-2 mb-2">
-									<span
-										className={`text-xs sm:text-sm font-medium ${
-											message.sender === "user"
-												? "text-blue-100"
-												: "text-gray-500 dark:text-gray-400"
-										}`}
-									>
-										{message.sender === "user"
-											? "You"
-											: "hatakeyama"}
-									</span>
+								<div className="text-[10px] uppercase tracking-wider text-neutral-400 mb-1.5 font-mono">
+									{message.sender === "user"
+										? "You"
+										: "hatakeyama"}
 								</div>
-								<p className="text-sm sm:text-base leading-relaxed">
+								<p className="leading-relaxed">
 									{message.content}
 								</p>
 							</div>
 						</div>
 					))}
 
-					{/* Typing Indicator */}
+					{/* Typing indicator */}
 					{isTyping && (
 						<div className="flex justify-start animate-fade-in">
-							<div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl rounded-bl-sm px-5 py-4 max-w-md lg:max-w-lg shadow-lg">
-								<div className="flex items-center space-x-2 mb-2">
-									{/* <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-										AI
-									</span> */}
-								</div>
-								<div className="flex space-x-1">
-									<div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-bounce"></div>
+							<div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+								<div className="flex gap-1">
+									<div className="w-1.5 h-1.5 bg-brand rounded-full animate-bounce" />
 									<div
-										className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-bounce"
+										className="w-1.5 h-1.5 bg-brand rounded-full animate-bounce"
 										style={{ animationDelay: "0.1s" }}
-									></div>
+									/>
 									<div
-										className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-blue-500 rounded-full animate-bounce"
+										className="w-1.5 h-1.5 bg-brand rounded-full animate-bounce"
 										style={{ animationDelay: "0.2s" }}
-									></div>
+									/>
 								</div>
 							</div>
 						</div>
 					)}
 
-					{/* Empty State */}
+					{/* Empty state */}
 					{messages.length === 0 && !isTyping && (
-						<div className="text-center py-6 sm:py-8">
-							<div className="text-3xl sm:text-4xl mb-4">🤖</div>
-							<p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
-								まもなく会話が始まります...
+						<div className="text-center py-8">
+							<p className="text-neutral-400 text-xs font-mono uppercase tracking-wider">
+								Loading conversation...
 							</p>
 						</div>
 					)}
 				</div>
 
-				{/* Input Area (Disabled Demo) */}
-				<div className="p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-					<div className="flex space-x-2 sm:space-x-3">
+				{/* Input (disabled) */}
+				<div className="px-4 sm:px-6 py-3 bg-neutral-50 dark:bg-neutral-800/50 border-t border-neutral-200 dark:border-neutral-700">
+					<div className="flex gap-2">
 						<input
 							type="text"
+							className="flex-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-3 py-2 text-xs text-neutral-400 cursor-not-allowed"
 							placeholder=""
-							className="flex-1 border border-gray-300 dark:border-gray-600 rounded-full px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
 							disabled
 						/>
 						<button
-							className="bg-gray-400 text-white p-2 rounded-full cursor-not-allowed"
+							className="bg-neutral-200 dark:bg-neutral-700 text-neutral-400 px-3 py-2 cursor-not-allowed"
 							disabled
 						>
 							<svg
-								className="w-3 h-3 sm:w-4 sm:h-4"
+								className="w-3.5 h-3.5"
 								fill="none"
 								stroke="currentColor"
 								viewBox="0 0 24 24"
@@ -186,35 +168,20 @@ export default function ChatDemo() {
 								<path
 									strokeLinecap="round"
 									strokeLinejoin="round"
-									strokeWidth={2}
+									strokeWidth={1.5}
 									d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
 								/>
 							</svg>
 						</button>
 					</div>
-					<p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center"></p>
 				</div>
 			</div>
-
-			{/* Tech Stack Indicator */}
-			{/* <div className="mt-4 text-center">
-				<div className="inline-flex items-center space-x-2 bg-white bg-opacity-10 backdrop-blur-sm rounded-full px-4 py-2">
-					<span className="text-xs text-gray-300">Built with</span>
-					<span className="text-xs font-semibold text-blue-300">
-						React
-					</span>
-					<span className="text-xs text-gray-300">+</span>
-					<span className="text-xs font-semibold text-purple-300">
-						LangChain.js
-					</span>
-				</div>
-			</div> */}
 
 			<style jsx>{`
 				@keyframes fade-in {
 					from {
 						opacity: 0;
-						transform: translateY(10px);
+						transform: translateY(8px);
 					}
 					to {
 						opacity: 1;
@@ -222,7 +189,7 @@ export default function ChatDemo() {
 					}
 				}
 				.animate-fade-in {
-					animation: fade-in 0.5s ease-out;
+					animation: fade-in 0.4s ease-out;
 				}
 			`}</style>
 		</div>
