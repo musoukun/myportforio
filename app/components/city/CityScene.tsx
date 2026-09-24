@@ -3,17 +3,27 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { createDiorama, DIORAMA_H, DIORAMA_W, LOOP_SECONDS } from "@/lib/halloween-diorama";
+import { createDiorama, DIORAMA_H, DIORAMA_W, LOOP_SECONDS } from "@/lib/osaka-diorama";
 
-const NIGHT = "#070a18";
 const PLANE_W = 16;
 const PLANE_H = (PLANE_W * DIORAMA_H) / DIORAMA_W;
 const FOV = 40;
-// Campfire position in the diorama (pixel x 112 of 320), in plane units.
-const CAMPFIRE_X = (112 / DIORAMA_W - 0.5) * PLANE_W;
+// Osaka Castle (pixel x 128 of 320), in plane units: narrow screens pan toward it.
+const FOCUS_X = (128 / DIORAMA_W - 0.5) * PLANE_W;
+
+// Colour of the space around the diorama, from morning (top of page) to night (bottom).
+// Kept deep enough that the white page copy stays readable at every time of day.
+const SPACE = ["#3f5787", "#2f5f99", "#3a2d5c", "#070a18"].map((c) => new THREE.Color(c));
 
 const ease = (v: number) => v * v * (3 - 2 * v);
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+const nightOf = (phase: number) => ease(clamp01((phase - 0.62) / 0.33));
+
+function spaceColor(phase: number, out: THREE.Color) {
+	const s = clamp01(phase) * (SPACE.length - 1);
+	const i = Math.min(SPACE.length - 2, Math.floor(s));
+	return out.copy(SPACE[i]).lerp(SPACE[i + 1], s - i);
+}
 
 // Camera distance at which the diorama plane exactly covers the viewport.
 function coverDistance(aspect: number) {
@@ -21,28 +31,42 @@ function coverDistance(aspect: number) {
 	return visibleH / 2 / Math.tan(THREE.MathUtils.degToRad(FOV / 2));
 }
 
-// Page scroll, smoothed so the camera glides after the scrollbar.
+type Scroll = { y: number; phase: number };
+
+// Page scroll (pixels) and how far down the page we are (0..1 = morning..night),
+// smoothed so the camera and the sky glide after the scrollbar.
 function useSmoothScroll() {
-	const target = useRef(0);
-	const current = useRef(0);
+	const target = useRef<Scroll>({ y: 0, phase: 0 });
+	const current = useRef<Scroll>({ y: 0, phase: 0 });
 	useEffect(() => {
-		const onScroll = () => (target.current = window.scrollY);
+		const onScroll = () => {
+			const max = document.documentElement.scrollHeight - window.innerHeight;
+			target.current = { y: window.scrollY, phase: max > 0 ? window.scrollY / max : 0 };
+		};
 		onScroll();
-		current.current = target.current;
+		current.current = { ...target.current };
 		window.addEventListener("scroll", onScroll, { passive: true });
-		return () => window.removeEventListener("scroll", onScroll);
+		window.addEventListener("resize", onScroll);
+		return () => {
+			window.removeEventListener("scroll", onScroll);
+			window.removeEventListener("resize", onScroll);
+		};
 	}, []);
 	useFrame((_, dt) => {
-		current.current += (target.current - current.current) * (1 - Math.exp(-dt * 5));
+		const k = 1 - Math.exp(-dt * 5);
+		current.current.y += (target.current.y - current.current.y) * k;
+		current.current.phase += (target.current.phase - current.current.phase) * k;
 	});
 	return current;
 }
 
-function Diorama({ scroll }: { scroll: React.RefObject<number> }) {
+type SceneProps = { scroll: React.RefObject<Scroll> };
+
+function Diorama({ scroll }: SceneProps) {
 	const group = useRef<THREE.Group>(null);
 	const { render, texture } = useMemo(() => {
 		const render = createDiorama();
-		const image = render(0);
+		const image = render(0, 0);
 		const texture = new THREE.DataTexture(new Uint8Array(image.data.buffer), DIORAMA_W, DIORAMA_H);
 		texture.magFilter = THREE.NearestFilter;
 		texture.minFilter = THREE.NearestFilter;
@@ -56,9 +80,9 @@ function Diorama({ scroll }: { scroll: React.RefObject<number> }) {
 	useEffect(() => () => texture.dispose(), [texture]);
 
 	useFrame(({ clock, size }) => {
-		render(clock.elapsedTime % LOOP_SECONDS);
+		render(clock.elapsedTime % LOOP_SECONDS, scroll.current.phase);
 		texture.needsUpdate = true;
-		const h = ease(clamp01(scroll.current / size.height));
+		const h = ease(clamp01(scroll.current.y / size.height));
 		const g = group.current;
 		if (!g) return;
 		g.position.set(h * 5, h * 1.5, -h * 6);
@@ -79,57 +103,40 @@ function Diorama({ scroll }: { scroll: React.RefObject<number> }) {
 	);
 }
 
-function Rain({ count = 1400 }) {
-	const { geometry, drops } = useMemo(() => {
-		const drops = Array.from({ length: count }, () => ({
-			x: THREE.MathUtils.randFloatSpread(60),
-			y: THREE.MathUtils.randFloatSpread(40),
-			z: THREE.MathUtils.randFloat(-30, 28),
-			speed: THREE.MathUtils.randFloat(16, 26),
-		}));
-		const geometry = new THREE.BufferGeometry();
-		geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(count * 6), 3));
-		return { geometry, drops };
-	}, [count]);
-	useEffect(() => () => geometry.dispose(), [geometry]);
-
-	useFrame((_, dt) => {
-		const pos = geometry.attributes.position.array as Float32Array;
-		const step = Math.min(dt, 0.05);
-		drops.forEach((d, i) => {
-			d.y -= d.speed * step;
-			d.x -= d.speed * step * 0.12;
-			if (d.y < -20) {
-				d.y += 40;
-				d.x = THREE.MathUtils.randFloatSpread(60);
-			}
-			pos.set([d.x, d.y, d.z, d.x + 0.07, d.y + 0.6, d.z], i * 6);
-		});
-		geometry.attributes.position.needsUpdate = true;
+// Sky colour and fog of the surrounding space follow the time of day.
+function Atmosphere({ scroll }: SceneProps) {
+	const { scene } = useThree();
+	const color = useMemo(() => new THREE.Color(), []);
+	useEffect(() => {
+		scene.background = color;
+		scene.fog = new THREE.FogExp2(color, 0.03);
+		return () => {
+			scene.background = null;
+			scene.fog = null;
+		};
+	}, [scene, color]);
+	useFrame(() => {
+		spaceColor(scroll.current.phase, color);
 	});
-
-	return (
-		<lineSegments geometry={geometry}>
-			<lineBasicMaterial color="#8ea8d2" transparent opacity={0.28} depthWrite={false} />
-		</lineSegments>
-	);
+	return null;
 }
 
-// Warm square embers drifting upward; they rush past as the page scrolls.
-function Embers({ scroll, count = 220 }: { scroll: React.RefObject<number>; count?: number }) {
+// Drifting motes of light: soft dust by day, city sparkle by night.
+function Motes({ scroll, count = 220 }: SceneProps & { count?: number }) {
 	const points = useRef<THREE.Points>(null);
+	const material = useRef<THREE.PointsMaterial>(null);
 	const { geometry, seeds } = useMemo(() => {
-		const warm = [new THREE.Color("#ffd166"), new THREE.Color("#ff9f1c"), new THREE.Color("#e2531a")];
+		const palette = [new THREE.Color("#ffd98a"), new THREE.Color("#eef3ff"), new THREE.Color("#ffb14a")];
 		const positions = new Float32Array(count * 3);
 		const colors = new Float32Array(count * 3);
 		const seeds = Array.from({ length: count }, (_, i) => {
-			const c = warm[i % warm.length];
+			const c = palette[i % palette.length];
 			colors.set([c.r, c.g, c.b], i * 3);
 			return {
 				x: THREE.MathUtils.randFloatSpread(50),
 				y: THREE.MathUtils.randFloatSpread(60),
 				z: THREE.MathUtils.randFloat(-30, 20),
-				rise: THREE.MathUtils.randFloat(0.3, 1.2),
+				rise: THREE.MathUtils.randFloat(0.2, 0.8),
 				phase: Math.random() * Math.PI * 2,
 			};
 		});
@@ -142,7 +149,7 @@ function Embers({ scroll, count = 220 }: { scroll: React.RefObject<number>; coun
 
 	useFrame(({ clock, size }) => {
 		const t = clock.elapsedTime;
-		const lift = (scroll.current / size.height) * 6;
+		const lift = (scroll.current.y / size.height) * 6;
 		const pos = geometry.attributes.position.array as Float32Array;
 		seeds.forEach((s, i) => {
 			const y = ((((s.y + t * s.rise + lift) % 60) + 60) % 60) - 30;
@@ -150,15 +157,16 @@ function Embers({ scroll, count = 220 }: { scroll: React.RefObject<number>; coun
 		});
 		geometry.attributes.position.needsUpdate = true;
 		if (points.current) points.current.rotation.y = Math.sin(t * 0.05) * 0.1;
+		if (material.current) material.current.opacity = 0.25 + 0.7 * nightOf(scroll.current.phase);
 	});
 
 	return (
 		<points ref={points} geometry={geometry}>
 			<pointsMaterial
-				size={0.14}
+				ref={material}
+				size={0.12}
 				vertexColors
 				transparent
-				opacity={0.9}
 				blending={THREE.AdditiveBlending}
 				depthWrite={false}
 				toneMapped={false}
@@ -167,8 +175,8 @@ function Embers({ scroll, count = 220 }: { scroll: React.RefObject<number>; coun
 	);
 }
 
-// Floating paper lanterns: small glowing cubes that bob and turn.
-function Lanterns({ count = 14 }) {
+// Floating paper lanterns (chochin) that light up as night falls.
+function Lanterns({ scroll, count = 14 }: SceneProps & { count?: number }) {
 	const refs = useRef<(THREE.Mesh | null)[]>([]);
 	const items = useMemo(
 		() =>
@@ -185,13 +193,14 @@ function Lanterns({ count = 14 }) {
 	);
 	useFrame(({ clock }) => {
 		const t = clock.elapsedTime;
+		const lit = 0.45 + 0.55 * nightOf(scroll.current.phase);
 		items.forEach((it, i) => {
 			const m = refs.current[i];
 			if (!m) return;
 			m.position.set(it.pos.x, it.pos.y + Math.sin(t * 0.5 + it.phase) * 0.6, it.pos.z);
 			m.rotation.set(0.2, t * 0.3 + it.phase, 0.1);
-			const flicker = 0.85 + 0.15 * Math.sin(t * 7 + it.phase * 3) * Math.sin(t * 3.1 + it.phase);
-			(m.material as THREE.MeshBasicMaterial).color.setRGB(1 * flicker, 0.62 * flicker, 0.25 * flicker);
+			const flicker = lit * (0.88 + 0.12 * Math.sin(t * 7 + it.phase * 3) * Math.sin(t * 3.1 + it.phase));
+			(m.material as THREE.MeshBasicMaterial).color.setRGB(0.95 * flicker, 0.36 * flicker, 0.24 * flicker);
 		});
 	});
 	return (
@@ -206,26 +215,28 @@ function Lanterns({ count = 14 }) {
 	);
 }
 
-function CameraRig({ scroll }: { scroll: React.RefObject<number> }) {
+function CameraRig({ scroll }: SceneProps) {
 	const { camera, size } = useThree();
 	useFrame(({ clock }) => {
 		const vh = size.height;
-		const h = ease(clamp01(scroll.current / vh));
-		const page = scroll.current / vh;
+		const h = ease(clamp01(scroll.current.y / vh));
+		const page = scroll.current.y / vh;
 		const t = clock.elapsedTime;
 		const cam = camera as THREE.PerspectiveCamera;
 		const aspect = size.width / size.height;
 		const start = coverDistance(aspect);
-		// On narrow screens only a slice of the diorama fits; pan it toward the campfire.
+		// On narrow screens only a slice of the diorama fits; pan it toward the castle.
 		const visibleW = Math.min(PLANE_H, PLANE_W / aspect) * aspect;
 		const room = Math.max(0, (PLANE_W - visibleW) / 2);
-		const focusX = THREE.MathUtils.clamp(CAMPFIRE_X, -room, room) * (1 - h);
+		const focusX = THREE.MathUtils.clamp(FOCUS_X, -room, room) * (1 - h);
+		// After the hero the camera drifts around the floating city but always
+		// keeps it in view, so the sky can be watched turning from day to night.
 		cam.position.set(
-			focusX + Math.sin(page * 0.45) * 3 * h + Math.sin(t * 0.2) * 0.15 * h,
-			h * 1.2 - Math.max(0, page - 1) * 0.8,
-			start + h * 10 - Math.max(0, page - 1) * 2.2,
+			focusX + Math.sin(page * 0.5) * 2.5 * h + Math.sin(t * 0.2) * 0.15 * h,
+			h * 1.2 + Math.sin(page * 0.35) * 0.6 * h,
+			start + h * 10 + Math.sin(page * 0.25) * 1.5 * h,
 		);
-		cam.lookAt(focusX + h * 2, h * 0.8 - Math.max(0, page - 1) * 0.9, -10 * h);
+		cam.lookAt(focusX + h * 4, h * 1.3, -6 * h);
 	});
 	return null;
 }
@@ -234,18 +245,16 @@ function Scene() {
 	const scroll = useSmoothScroll();
 	return (
 		<>
-			<color attach="background" args={[NIGHT]} />
-			<fogExp2 attach="fog" args={[NIGHT, 0.035]} />
+			<Atmosphere scroll={scroll} />
 			<CameraRig scroll={scroll} />
 			<Diorama scroll={scroll} />
-			<Lanterns />
-			<Embers scroll={scroll} />
-			<Rain />
+			<Lanterns scroll={scroll} />
+			<Motes scroll={scroll} />
 		</>
 	);
 }
 
-export default function NightScene() {
+export default function CityScene() {
 	return (
 		<div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
 			<Canvas dpr={[1, 1.75]} camera={{ fov: FOV, near: 0.1, far: 200, position: [0, 0, 12] }}>

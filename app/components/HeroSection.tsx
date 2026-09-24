@@ -15,15 +15,15 @@ export default function HeroSection() {
 
   return (
     <section id="home" className="relative h-screen overflow-hidden">
-      {/* Shade the upper-left sky so the copy reads; the campfire below stays clear */}
-      <div className="absolute inset-0 bg-gradient-to-br from-night/85 via-night/20 to-transparent pointer-events-none" />
+      {/* Shade the upper-left sky so the copy reads over the bright morning */}
+      <div className="absolute inset-0 bg-gradient-to-br from-night/75 via-night/15 to-transparent pointer-events-none" />
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-night to-transparent pointer-events-none" />
 
       <motion.div
         className="relative h-full max-w-6xl mx-auto px-6 flex items-start pt-28 sm:pt-32"
         style={{ y, opacity }}
       >
-        <div className="space-y-6 max-w-2xl min-w-0 w-full">
+        <div className="space-y-6 max-w-2xl min-w-0 w-full [text-shadow:0_2px_12px_rgba(7,10,24,0.55)]">
           <motion.p
             className="font-pixel text-xs sm:text-sm text-brand flex items-center gap-3"
             initial={{ opacity: 0, x: -10 }}

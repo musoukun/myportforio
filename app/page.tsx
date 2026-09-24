@@ -5,12 +5,12 @@ import PortfolioSection from "@/app/components/PortfolioSection";
 import ResumeSection from "@/app/components/ResumeSection";
 import ContactSection from "@/app/components/ContactSection";
 import Footer from "@/app/components/Footer";
-import NightScene from "@/app/components/night/NightScene";
+import CityScene from "@/app/components/city/CityScene";
 
 export default function Home() {
 	return (
 		<div className="bg-night text-night-text">
-			<NightScene />
+			<CityScene />
 			<div className="relative z-10">
 				<Header />
 				<HeroSection />
