@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "motion/react";
-import { Briefcase, Code2, Award } from "lucide-react";
+import { Briefcase, Code2, Award, ChevronDown, type LucideIcon } from "lucide-react";
 import SectionHeader from "./SectionHeader";
 
 const experience = [
@@ -85,9 +86,44 @@ const certifications = [
   { name: "AWS Cloud Practitioner", issuer: "Amazon Web Services" },
 ];
 
+// A resume card. On phones it folds: tap the heading to open or close it.
+// From tablet width up it is always open.
+function ResumePanel({
+  icon: Icon,
+  title,
+  defaultOpen = false,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="panel p-5 md:p-6 h-full">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        className="w-full text-lg font-semibold flex items-center gap-3 text-night-text md:cursor-default md:mb-8"
+      >
+        <span className="w-8 h-8 bg-brand text-night flex items-center justify-center text-sm shadow-[3px_3px_0_0_#03050d]">
+          <Icon className="w-4 h-4" />
+        </span>
+        {title}
+        <ChevronDown
+          className={`ml-auto w-5 h-5 text-brand transition-transform md:hidden ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      <div className={`${open ? "block" : "hidden"} md:block mt-6 md:mt-0`}>{children}</div>
+    </div>
+  );
+}
+
 export default function ResumeSection() {
   return (
-    <section id="resume" className="relative py-24">
+    <section id="resume" className="relative py-16 md:py-24">
       <div className="max-w-6xl mx-auto px-6">
         <SectionHeader number="03" label="Resume" title="Resume" />
 
@@ -100,13 +136,7 @@ export default function ResumeSection() {
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
           >
-            <div className="panel p-6 h-full">
-              <h3 className="text-lg font-semibold mb-8 flex items-center gap-3 text-night-text">
-                <span className="w-8 h-8 bg-brand text-night flex items-center justify-center text-sm shadow-[3px_3px_0_0_#03050d]">
-                  <Briefcase className="w-4 h-4" />
-                </span>
-                職歴
-              </h3>
+            <ResumePanel icon={Briefcase} title="職歴" defaultOpen>
 
               <div className="space-y-8">
                 {experience.map((exp, idx) => (
@@ -133,7 +163,7 @@ export default function ResumeSection() {
                   </motion.div>
                 ))}
               </div>
-            </div>
+            </ResumePanel>
           </motion.div>
 
           {/* Skills */}
@@ -144,13 +174,7 @@ export default function ResumeSection() {
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
           >
-            <div className="panel p-6 h-full">
-              <h3 className="text-lg font-semibold mb-8 flex items-center gap-3 text-night-text">
-                <span className="w-8 h-8 bg-brand text-night flex items-center justify-center text-sm shadow-[3px_3px_0_0_#03050d]">
-                  <Code2 className="w-4 h-4" />
-                </span>
-                技術スキル
-              </h3>
+            <ResumePanel icon={Code2} title="技術スキル">
 
               <div className="space-y-4">
                 {skillCategories.map((cat, idx) => (
@@ -178,7 +202,7 @@ export default function ResumeSection() {
                   </motion.div>
                 ))}
               </div>
-            </div>
+            </ResumePanel>
           </motion.div>
 
           {/* Certifications */}
@@ -189,13 +213,7 @@ export default function ResumeSection() {
             viewport={{ once: true }}
             transition={{ delay: 0.3 }}
           >
-            <div className="panel p-6 h-full">
-              <h3 className="text-lg font-semibold mb-8 flex items-center gap-3 text-night-text">
-                <span className="w-8 h-8 bg-brand text-night flex items-center justify-center text-sm shadow-[3px_3px_0_0_#03050d]">
-                  <Award className="w-4 h-4" />
-                </span>
-                資格・認定
-              </h3>
+            <ResumePanel icon={Award} title="資格・認定">
 
               <div className="space-y-4">
                 {certifications.map((cert, idx) => (
@@ -216,7 +234,7 @@ export default function ResumeSection() {
                   </motion.div>
                 ))}
               </div>
-            </div>
+            </ResumePanel>
           </motion.div>
         </div>
       </div>

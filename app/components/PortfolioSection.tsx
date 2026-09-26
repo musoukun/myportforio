@@ -187,7 +187,7 @@ function ProjectSlide({
           <div className="absolute inset-0 bg-gradient-to-t from-brand/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
         </div>
 
-        <div className="p-6 sm:p-8 flex flex-col justify-between gap-5">
+        <div className="p-5 md:p-8 flex flex-col justify-between gap-3 md:gap-5">
           <div>
             <div className="font-pixel text-xs flex items-center gap-3 mb-3">
               <span className="text-brand">
@@ -200,15 +200,15 @@ function ProjectSlide({
                 </span>
               )}
             </div>
-            <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-night-text mb-3">
+            <h3 className="text-xl md:text-3xl font-bold tracking-tight text-night-text mb-2 md:mb-3">
               {project.title}
             </h3>
-            <p className="text-night-muted text-sm leading-relaxed whitespace-pre-line line-clamp-6">
+            <p className="text-night-muted text-sm leading-relaxed whitespace-pre-line line-clamp-4 md:line-clamp-6">
               {project.description}
             </p>
           </div>
           <div>
-            <div className="flex flex-wrap gap-2 mb-5">
+            <div className="flex flex-wrap gap-2 mb-3 md:mb-5">
               {project.tags.map((t) => (
                 <span
                   key={t}
@@ -280,7 +280,7 @@ export default function PortfolioSection() {
             />
           </div>
           <div
-            className="absolute inset-x-0 top-56 bottom-4"
+            className="absolute inset-x-0 top-44 md:top-56 bottom-4"
             style={{ perspective: 1400 }}
           >
             {projects.map((project, index) => (

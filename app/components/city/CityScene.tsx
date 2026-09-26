@@ -241,15 +241,26 @@ function CameraRig({ scroll }: SceneProps) {
 	return null;
 }
 
+// Phones get a lighter scene: native-resolution rendering and fewer floating lights.
+function useLightweight() {
+	const small = useThree((st) => st.size.width < 768);
+	const setDpr = useThree((st) => st.setDpr);
+	useEffect(() => {
+		setDpr(small ? 1 : Math.min(window.devicePixelRatio || 1, 1.75));
+	}, [small, setDpr]);
+	return small;
+}
+
 function Scene() {
 	const scroll = useSmoothScroll();
+	const small = useLightweight();
 	return (
 		<>
 			<Atmosphere scroll={scroll} />
 			<CameraRig scroll={scroll} />
 			<Diorama scroll={scroll} />
-			<Lanterns scroll={scroll} />
-			<Motes scroll={scroll} />
+			<Lanterns scroll={scroll} count={small ? 8 : 14} />
+			<Motes scroll={scroll} count={small ? 90 : 220} />
 		</>
 	);
 }

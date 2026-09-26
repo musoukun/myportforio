@@ -17,7 +17,7 @@ export default function SectionHeader({
 }: SectionHeaderProps) {
   return (
     <motion.div
-      className="mb-14 space-y-4"
+      className="mb-8 md:mb-14 space-y-3 md:space-y-4"
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
@@ -35,7 +35,7 @@ export default function SectionHeader({
       </h2>
 
       {description && (
-        <p className="text-night-muted max-w-2xl text-sm leading-relaxed">
+        <p className="hidden md:block text-night-muted max-w-2xl text-sm leading-relaxed">
           {description}
         </p>
       )}

@@ -19,13 +19,15 @@ export default function HeroSection() {
       <div className="absolute inset-0 bg-gradient-to-br from-night/75 via-night/15 to-transparent pointer-events-none" />
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-night to-transparent pointer-events-none" />
 
+      {/* On phones the copy splits into a top block (badge + name) and a bottom
+          block (stats + buttons) so the city stays visible in between. */}
       <motion.div
-        className="relative h-full max-w-6xl mx-auto px-6 flex items-start pt-28 sm:pt-32"
+        className="relative h-full max-w-6xl mx-auto px-6 flex flex-col justify-between md:justify-start md:gap-6 pt-20 pb-32 md:pt-32 md:pb-0 [text-shadow:0_1px_3px_rgba(7,10,24,0.95),0_2px_12px_rgba(7,10,24,0.7)]"
         style={{ y, opacity }}
       >
-        <div className="space-y-6 max-w-2xl min-w-0 w-full [text-shadow:0_1px_3px_rgba(7,10,24,0.95),0_2px_12px_rgba(7,10,24,0.7)]">
+        <div className="space-y-4 md:space-y-6 max-w-2xl min-w-0 w-full">
           <motion.p
-            className="inline-flex items-start gap-2 rounded-lg border border-brand/60 bg-night/80 px-4 py-2.5 text-sm sm:text-base font-semibold leading-snug text-white shadow-[4px_4px_0_0_#03050d] [text-shadow:none]"
+            className="inline-flex items-start gap-2 rounded-lg border border-brand/60 bg-night/80 px-3 py-2 md:px-4 md:py-2.5 text-xs md:text-base font-semibold leading-snug text-white shadow-[4px_4px_0_0_#03050d] [text-shadow:none]"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -39,7 +41,7 @@ export default function HeroSection() {
             </span>
           </motion.p>
           <motion.p
-            className="font-pixel text-xs sm:text-sm text-brand flex items-center gap-3"
+            className="font-pixel text-xs sm:text-sm text-brand hidden md:flex items-center gap-3"
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
@@ -58,7 +60,7 @@ export default function HeroSection() {
           </motion.h1>
 
           <motion.p
-            className="text-sm sm:text-base font-medium text-white max-w-lg leading-relaxed"
+            className="hidden md:block text-base font-medium text-white max-w-lg leading-relaxed"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
@@ -67,16 +69,17 @@ export default function HeroSection() {
             を活用したモダンなWebアプリケーション開発。
             8年間の開発経験と3年間の運用保守経験を持つ開発者です。
           </motion.p>
+        </div>
 
           <motion.div
-            className="flex flex-wrap items-end gap-x-10 gap-y-6"
+            className="flex flex-wrap items-end gap-x-8 gap-y-4 md:gap-x-10 md:gap-y-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.65 }}
           >
             {stats.map((s) => (
               <div key={s.label}>
-                <span className="font-pixel text-3xl sm:text-4xl font-bold text-white [text-shadow:0_2px_4px_rgba(7,10,24,0.95),0_0_14px_rgba(7,10,24,0.8)]">
+                <span className="font-pixel text-2xl md:text-4xl font-bold text-white [text-shadow:0_2px_4px_rgba(7,10,24,0.95),0_0_14px_rgba(7,10,24,0.8)]">
                   {s.value}
                 </span>
                 <p className="text-xs font-bold uppercase tracking-wider text-white mt-1 [text-shadow:0_1px_3px_rgba(0,0,0,0.9)]">
@@ -84,22 +87,21 @@ export default function HeroSection() {
                 </p>
               </div>
             ))}
-            <div className="flex gap-3">
+            <div className="flex gap-3 w-full md:w-auto">
               <a
                 href="#portfolio"
-                className="font-pixel inline-flex items-center bg-brand text-night [text-shadow:none] px-6 py-3 text-xs uppercase shadow-[4px_4px_0_0_#03050d] hover:bg-brand-hover hover:-translate-y-0.5 transition-all"
+                className="font-pixel flex-1 md:flex-none inline-flex items-center justify-center bg-brand text-night [text-shadow:none] px-6 py-3 text-xs uppercase shadow-[4px_4px_0_0_#03050d] hover:bg-brand-hover hover:-translate-y-0.5 transition-all"
               >
                 作品を見る
               </a>
               <a
                 href="#contact"
-                className="font-pixel inline-flex items-center bg-night/85 border-2 border-white text-white font-bold px-6 py-3 text-xs uppercase shadow-[4px_4px_0_0_#03050d] hover:border-brand hover:text-brand hover:-translate-y-0.5 transition-all"
+                className="font-pixel flex-1 md:flex-none inline-flex items-center justify-center bg-night/85 border-2 border-white text-white font-bold px-6 py-3 text-xs uppercase shadow-[4px_4px_0_0_#03050d] hover:border-brand hover:text-brand hover:-translate-y-0.5 transition-all"
               >
                 Contact
               </a>
             </div>
           </motion.div>
-        </div>
       </motion.div>
 
       <motion.div
