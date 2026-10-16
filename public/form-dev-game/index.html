@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="簡単な申込フォームを作りながら、後出しの要望で作り直しが起きる様子と、Kanban・Git・GitHub が役に立つ場面を体験するゲーム。">
+<title>申込フォーム開発ゲーム</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 左に物語とボタン、右に Kanban の板・Git の記録・できあがりのフォーム。狭い画面では縦に積む */
+:root {
+  --bg: #eef1f5;
+  --panel: #ffffff;
+  --ink: #1b2433;
+  --muted: #5d6878;
+  --line: #d3d9e2;
+  --accent: #2c55d6;
+  --accent-ink: #ffffff;
+  --note: #fff3a8;
+  --note-ink: #3a3410;
+  --bad: #c8372d;
+  --bad-soft: #fbe3e1;
+  --good: #1f7a4d;
+  --good-soft: #dff3e8;
+  --shadow: 0 1px 2px rgba(27,36,51,.08), 0 4px 14px rgba(27,36,51,.06);
+  --f-display: "DotGothic16", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --f-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161d; --panel: #1b212b; --ink: #e6ebf2; --muted: #9aa5b5; --line: #2e3744;
+    --accent: #7c9cff; --accent-ink: #0d1220; --note: #5b5420; --note-ink: #fff7c4;
+    --bad: #ff7b70; --bad-soft: #3a1f1d; --good: #5fd39a; --good-soft: #17322a;
+    --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161d; --panel: #1b212b; --ink: #e6ebf2; --muted: #9aa5b5; --line: #2e3744;
+  --accent: #7c9cff; --accent-ink: #0d1220; --note: #5b5420; --note-ink: #fff7c4;
+  --bad: #ff7b70; --bad-soft: #3a1f1d; --good: #5fd39a; --good-soft: #17322a;
+  --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body);
+  font-size: 15px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(24px, 4vw, 34px); line-height: 1.2; margin: 0; letter-spacing: .02em; }
+.sub { color: var(--muted); margin: 4px 0 0; font-size: 13px; }
+.clock { display: grid; gap: 6px; min-width: 260px; flex: 0 1 340px; }
+.clock-nums { display: flex; justify-content: space-between; font-family: var(--f-display); font-size: 18px; font-variant-numeric: tabular-nums; }
+.clock-nums small { font-family: var(--f-body); font-size: 12px; color: var(--muted); margin-right: 4px; }
+.bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; position: relative; }
+.bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .4s ease, background .3s; }
+.bar i.over { background: var(--bad); }
+.bar b { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; min-width: 0; }
+.side { display: grid; gap: 18px; min-width: 0; }
+.label { font-size: 11px; letter-spacing: .12em; color: var(--muted); font-weight: 700; margin: 0 0 10px; }
+
+/* 物語 */
+.story { display: grid; gap: 14px; }
+.speaker { display: flex; gap: 10px; align-items: flex-start; }
+.avatar { flex: none; width: 38px; height: 38px; border-radius: 8px; display: grid; place-items: center; font-family: var(--f-display); font-size: 15px; background: var(--accent); color: var(--accent-ink); }
+.avatar.dev { background: var(--ink); color: var(--panel); }
+.avatar.warn { background: var(--bad); color: #fff; }
+.bubble { background: var(--bg); border-radius: 10px; padding: 10px 14px; min-width: 0; }
+.bubble strong { font-weight: 700; }
+.scene-title { font-family: var(--f-display); font-size: 20px; margin: 0; line-height: 1.4; }
+.choices { display: grid; gap: 10px; }
+.choice {
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; text-align: left;
+  font: inherit; color: var(--ink); background: var(--panel); border: 1.5px solid var(--line);
+  border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: border-color .15s, transform .1s;
+}
+.choice:hover:not(:disabled) { border-color: var(--accent); }
+.choice:active:not(:disabled) { transform: translateY(1px); }
+.choice:focus-visible, .btn:focus-visible, .kcard:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.choice:disabled { opacity: .45; cursor: not-allowed; }
+.choice .t { font-weight: 700; }
+.choice .d { grid-column: 1 / -1; color: var(--muted); font-size: 13px; }
+.cost { font-family: var(--f-display); font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cost.zero { color: var(--good); }
+.hint { grid-column: 1 / -1; font-size: 13px; background: var(--note); color: var(--note-ink); border-radius: 6px; padding: 4px 8px; }
+.btn {
+  font: inherit; font-weight: 700; border: 0; border-radius: 8px; padding: 10px 16px; cursor: pointer;
+  background: var(--accent); color: var(--accent-ink);
+}
+.btn.ghost { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; background: var(--bg); padding: 10px 12px; border-radius: 8px; cursor: pointer; }
+.check input { margin-top: 5px; }
+.est { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+@media (max-width: 420px) { .est { grid-template-columns: repeat(2, 1fr); } }
+.est .choice { grid-template-columns: 1fr; text-align: center; font-family: var(--f-display); font-size: 20px; }
+.result-box { padding: 10px 14px; border-radius: 8px; font-size: 14px; }
+.result-box.bad { background: var(--bad-soft); }
+.result-box.good { background: var(--good-soft); }
+.tool-tip { border-left: 3px solid var(--accent); padding: 4px 0 4px 12px; font-size: 14px; color: var(--muted); }
+.tool-tip b { color: var(--ink); }
+
+/* Kanban */
+.board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.col { background: var(--bg); border-radius: 8px; padding: 8px; min-height: 120px; display: grid; align-content: start; gap: 6px; min-width: 0; }
+.col h3 { margin: 0 0 2px; font-size: 12px; font-weight: 700; color: var(--muted); display: flex; justify-content: space-between; }
+.kcard {
+  background: var(--note); color: var(--note-ink); border-radius: 4px; padding: 6px 8px; font-size: 12px; line-height: 1.45;
+  box-shadow: var(--shadow); border: 0; text-align: left; font-family: inherit; width: 100%; min-width: 0; overflow-wrap: anywhere;
+}
+button.kcard { cursor: pointer; }
+button.kcard:hover { outline: 2px solid var(--accent); }
+.kcard .no { font-family: var(--f-mono); font-size: 10px; opacity: .7; display: block; }
+.kcard .days { font-family: var(--f-display); font-size: 12px; display: block; margin-top: 2px; }
+.kcard.rework { background: var(--bad-soft); color: var(--ink); box-shadow: inset 3px 0 0 var(--bad), var(--shadow); }
+.kcard.new { animation: pop .5s ease; }
+@keyframes pop { from { transform: scale(.8) rotate(-3deg); opacity: .3; } to { transform: none; opacity: 1; } }
+
+/* Git */
+.git { display: grid; gap: 10px; }
+.log { font-family: var(--f-mono); font-size: 12px; display: grid; gap: 2px; max-height: 210px; overflow: auto; }
+.log div { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.log .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.log .branch .dot { background: transparent; border: 2px solid var(--muted); margin-left: 14px; }
+.log .gone { text-decoration: line-through; color: var(--muted); }
+.log .empty { color: var(--muted); }
+.dirty { font-size: 12px; color: var(--bad); font-weight: 700; }
+.clean { font-size: 12px; color: var(--good); font-weight: 700; }
+
+/* できあがりのフォーム */
+.form { display: grid; gap: 8px; font-size: 13px; }
+.form .f { display: grid; grid-template-columns: 6.5em minmax(0, 1fr); gap: 8px; align-items: center; }
+.form .f span:first-child { color: var(--muted); }
+.form .box { border: 1px solid var(--line); border-radius: 5px; padding: 3px 8px; background: var(--bg); font-family: var(--f-mono); font-size: 12px; min-width: 0; overflow-wrap: anywhere; }
+.form .add { animation: flash 1.2s ease; }
+@keyframes flash { 0% { background: var(--note); } 100% { background: transparent; } }
+.form .tag { font-size: 11px; color: var(--accent); font-weight: 700; }
+.form .none { color: var(--muted); font-style: normal; }
+
+/* 結果 */
+.big { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: baseline; font-family: var(--f-display); }
+.big .n { font-size: clamp(40px, 7vw, 64px); line-height: 1; font-variant-numeric: tabular-nums; }
+.big .n.bad { color: var(--bad); }
+.big .u { font-size: 14px; color: var(--muted); font-family: var(--f-body); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 700; }
+td.num { text-align: right; font-family: var(--f-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl { overflow-x: auto; }
+.lessons { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.lessons li { display: grid; gap: 2px; }
+.lessons li b { font-size: 15px; }
+.lessons li span { color: var(--muted); font-size: 14px; }
+ul.qs { margin: 0; padding-left: 1.2em; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>申込フォーム開発ゲーム</h1>
+      <p class="sub">簡単なはずの開発で、後から何が起きるかを体験する（1人15分くらい）</p>
+    </div>
+    <div class="clock" aria-live="polite">
+      <div class="clock-nums"><span><small>かかった日数</small><span id="dayNum">0日</span></span><span><small>あなたの予想</small><span id="estNum">―</span></span></div>
+      <div class="bar"><i id="barFill"></i><b id="barMark" hidden></b></div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <main class="panel story" id="story" aria-live="polite"></main>
+    <aside class="side">
+      <section class="panel">
+        <p class="label">KANBAN（やることの板）</p>
+        <div class="board" id="board"></div>
+      </section>
+      <section class="panel git">
+        <p class="label">GIT（保存の記録）</p>
+        <div class="row" style="justify-content: space-between">
+          <span id="gitState"></span>
+          <button class="btn" id="commitBtn" type="button">今の状態を保存する</button>
+        </div>
+        <div class="log" id="gitLog"></div>
+      </section>
+      <section class="panel">
+        <p class="label">いま作っているフォーム</p>
+        <div class="form" id="form"></div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ===== データ =====
+  const DESIGN = [
+    { key: 'q1', q: '申し込んだ人を、どうやって見分ける？',
+      a: { t: '名前で見分ける', d: '名前がそのまま目印になる。作るのが一番早い。', cost: 0 },
+      b: { t: '1人ずつ番号を振る', d: '名前とは別に、申込ごとに番号を付ける。', cost: 0.5 },
+      hint: '総務から「同じ名前の社員が何人かいる」と聞いた。' },
+    { key: 'q2', q: '申込の取り消しは考える？',
+      a: { t: '考えない', d: '取り消しの話は出ていないので作らない。', cost: 0 },
+      b: { t: '「取り消し済み」の印を付けられるようにする', d: '消さずに印を付けて、誰が取り消したか残す。', cost: 0.5 },
+      hint: '人事から「毎回、取り消しの連絡が何件も来る」と聞いた。' },
+    { key: 'q3', q: '申し込んだ時刻は、どう記録する？',
+      a: { t: 'サーバーの時刻だけ記録する', d: '日本のサーバーの時計で記録する。', cost: 0 },
+      b: { t: 'どの国の時刻かも一緒に記録する', d: '日本時間か現地時間かが後から分かる。', cost: 0.5 },
+      hint: '海外支社からも参加者がいると聞いた。' }
+  ];
+
+  const CARDS = {
+    v1: { no: '初版', title: '名前とメールで申し込めるフォーム' },
+    c1: { no: '①', title: '同姓同名の人がいた', from: '総務',
+      say: '「田中 誠」さんが2人いて、どっちの申込か分からないよ。',
+      dep: 'q1', bad: { days: 4, text: '名前で人を見分ける作りにしていた。1人ずつ番号を振るように保存の形を変えて、今までの申込も1件ずつ移し替える。' },
+      good: { days: 0.5, text: '最初から番号を振っていたので、画面に番号を出すだけで済む。' },
+      ask: '同じ名前の人はいますか？' },
+    c2: { no: '②', title: '申込を取り消したい', from: '人事',
+      say: '間違えて申し込んだ人が「取り消したい」って。人数の集計からも外してね。',
+      dep: 'q2', bad: { days: 3, text: '取り消しを記録する場所がない。ただ消すと誰が取り消したか残らない。印を付ける形に作り直して、集計の計算も全部直す。' },
+      good: { days: 0.5, text: '印を付ける場所は最初からある。取り消しボタンを付けるだけで済む。' },
+      ask: '申込を取り消すことはありますか？' },
+    c3: { no: '③', title: '名前は10文字まで', from: 'PM',
+      say: '名札に印刷するから、名前は10文字までにして。',
+      text: '文字数を数えるだけのつもりだった。でも「𠮷」のような字や絵文字は、見た目は1文字でも、コンピュータの数え方では2文字以上になる。数え方を決めてから直す。',
+      days: 1, ask: null },
+    c4: { no: '④', title: '締切は10/31 23:59', from: '海外支社',
+      say: 'シンガポール支社からも参加するよ。締切は10/31の23:59だよね？',
+      dep: 'q3', bad: { days: 2, text: '記録していたのは日本のサーバーの時刻だけ。シンガポールの23:59は日本の0:59になる。どの国の時刻で締めるかを決めて、時刻の記録の仕方を直す。' },
+      good: { days: 0.5, text: 'どの国の時刻かも記録していたので、締切の判定を足すだけで済む。' },
+      ask: '海外から申し込む人はいますか？' },
+    c5: { no: '⑤', title: '顔写真で本人確認', from: 'PM',
+      say: '受付を楽にしたいから、顔写真で本人か確認できるようにして。名前の欄と同じくらいでできるでしょ？',
+      ask: '当日の本人確認はどうしますか？' }
+  };
+  const IDEAL = 1 + 1.5 + 1 + 0.5 + 0.5 + 1 + 0.5;
+
+  // ===== 状態 =====
+  const fresh = () => ({
+    scene: 'intro', estimate: null, day: 0, heard: false, design: {}, dIdx: 0,
+    cards: [{ id: 'v1', col: 'todo', days: 0, rework: false, note: true }],
+    commits: [], dirty: false, broke: false, current: null, resolved: 0,
+    noteChecked: false, lastResult: null, c5way: null, reverted: 0, manualFix: 0, reviewCost: 0, fresh: {}
+  });
+  let S = (window.claude && window.claude.hot && window.claude.hot.data && window.claude.hot.data.S) || fresh();
+  if (window.claude && window.claude.hot && window.claude.hot.snapshot) {
+    window.claude.hot.snapshot(() => ({ S }));
+  }
+
+  // ===== 小さな道具 =====
+  const $ = (id) => document.getElementById(id);
+  const fmt = (d) => (Number.isInteger(d) ? d : d.toFixed(1)) + '日';
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const card = (id) => S.cards.find((c) => c.id === id);
+  const addDays = (d) => { S.day += d; };
+  const issueNo = (id) => S.cards.findIndex((c) => c.id === id) + 1;
+  const lastSave = () => S.commits.filter((c) => !c.branch).pop();
+  function addCard(id, extra) {
+    S.cards.push(Object.assign({ id, col: 'todo', days: 0, rework: false, note: false }, extra || {}));
+    S.fresh[id] = true;
+  }
+  function say(who, text, kind) {
+    const av = { PM: 'PM', 総務: '総', 人事: '人', 海外支社: '海', あなた: '私', '!': '!' }[who] || who.slice(0, 1);
+    return `<div class="speaker"><div class="avatar ${kind || ''}">${esc(av)}</div><div class="bubble"><strong>${esc(who === '!' ? '' : who)}</strong>${who === '!' ? '' : '<br>'}${text}</div></div>`;
+  }
+  function choice(i, t, d, cost, opts) {
+    opts = opts || {};
+    const c = cost == null ? '' : `<span class="cost ${cost === 0 ? 'zero' : ''}">${cost === 0 ? '+0日' : '+' + fmt(cost)}</span>`;
+    return `<button class="choice" type="button" data-i="${i}" ${opts.disabled ? 'disabled' : ''}><span class="t">${t}</span>${c}${d ? `<span class="d">${d}</span>` : ''}${opts.hint ? `<span class="hint">${opts.hint}</span>` : ''}</button>`;
+  }
+  const noteBox = () => `<label class="check"><input type="checkbox" id="noteChk" ${S.noteChecked ? 'checked' : ''}><span>なぜこう変えたかを、GitHub のプルリクエスト（変更の説明書き）に書いておく<br><span style="color:var(--muted);font-size:13px">書いても日数は増えない</span></span></label>`;
+
+  // ===== 画面ごとの中身 =====
+  const SCENES = {
+    intro() {
+      return {
+        html: `<h2 class="scene-title">依頼が来た</h2>
+          ${say('PM', '社内イベントの参加申込フォームを作ってほしい。<strong>名前とメールを入れて保存するだけ</strong>でいいよ。簡単でしょ？')}
+          <p style="margin:0">あなたは開発の担当者。<strong>何日でできそう？</strong>予想をPMに伝えよう。</p>
+          <div class="est">${[1, 2, 3, 5].map((d, i) => choice(i, d + '日')).join('')}</div>`,
+        on(i) { S.estimate = [1, 2, 3, 5][i]; S.scene = 'hearing'; }
+      };
+    },
+    hearing() {
+      return {
+        html: `<h2 class="scene-title">作る前に</h2>
+          ${say('PM', `${S.estimate}日ね、了解！じゃあよろしく。`)}
+          <p style="margin:0">作り始める前に、総務・人事・海外支社に使い方を聞いて回ることもできる。そのぶん日数はかかる。</p>
+          <div class="choices">
+            ${choice(0, 'すぐ作り始める', '言われたことはもう分かっている。', 0)}
+            ${choice(1, '関係者に話を聞いて回る', 'イベントの担当者に、どう使うつもりかを聞く。', 1)}
+          </div>`,
+        on(i) { if (i === 1) { S.heard = true; addDays(1); } S.scene = 'design'; S.dIdx = 0; }
+      };
+    },
+    design() {
+      const q = DESIGN[S.dIdx];
+      return {
+        html: `<h2 class="scene-title">作り方を決める（${S.dIdx + 1}/3）</h2>
+          ${say('あなた', q.q, 'dev')}
+          <div class="choices">
+            ${choice(0, q.a.t, q.a.d, q.a.cost)}
+            ${choice(1, q.b.t, q.b.d, q.b.cost, { hint: S.heard ? '話を聞いたとき: ' + q.hint : '' })}
+          </div>
+          ${S.heard ? '' : '<p class="tool-tip">話を聞いていないので、どちらが要るかは分からない。</p>'}`,
+        on(i) {
+          S.design[q.key] = i === 0 ? 'a' : 'b';
+          addDays(i === 0 ? q.a.cost : q.b.cost);
+          S.dIdx++;
+          if (S.dIdx >= DESIGN.length) S.scene = 'build';
+        }
+      };
+    },
+    build() {
+      return {
+        html: `<h2 class="scene-title">初版を作る</h2>
+          <p style="margin:0">作り方は決まった。いよいよ作る。</p>
+          <div class="choices">${choice(0, '初版を作る', '名前とメールを入れて保存できるフォーム。', 1)}</div>`,
+        on() {
+          addDays(1);
+          const v = card('v1'); v.col = 'done'; v.days = 1 + (S.heard ? 1 : 0) + DESIGN.reduce((s, q) => s + (S.design[q.key] === 'b' ? 0.5 : 0), 0);
+          S.dirty = true; S.scene = 'built';
+        }
+      };
+    },
+    built() {
+      return {
+        html: `<h2 class="scene-title">初版ができた</h2>
+          ${say('PM', `おお、できたね！今は ${fmt(S.day)}。さっそく公開しよう。`)}
+          <p class="tool-tip"><b>Git の出番。</b>右の「今の状態を保存する」を押すと、この動く版をあとで呼び戻せるようになる。押すかどうかは自由。</p>
+          <div class="choices">${choice(0, '公開する', '社内のみんなに使ってもらう。')}</div>`,
+        on() {
+          S.scene = 'board';
+          addCard('c1'); addCard('c2');
+          S.boardMsg = say('PM', '使った人から要望が<strong>2つ</strong>届いたよ。Kanban の「やること」に貼っておいた。');
+        }
+      };
+    },
+    board() {
+      const todo = S.cards.filter((c) => c.col === 'todo');
+      return {
+        html: `<h2 class="scene-title">次はどれに取りかかる？</h2>
+          ${S.boardMsg || ''}
+          <p class="tool-tip"><b>Kanban の出番。</b>要望は1枚ずつカードになって「やること」に並ぶ。PMは板を見れば、何が待っていて何が終わったかが分かる。</p>
+          <div class="choices">${todo.map((c, i) => choice(i, `${CARDS[c.id].no} ${CARDS[c.id].title}`, `${CARDS[c.id].from}より`)).join('')}</div>`,
+        on(i) { const c = todo[i]; c.col = 'doing'; S.current = c.id; S.noteChecked = false; S.scene = c.id === 'c5' ? 'c5' : 'card'; }
+      };
+    },
+    card() {
+      const def = CARDS[S.current];
+      let path, days, text, rework = false;
+      if (def.dep) {
+        const good = S.design[def.dep] === 'b';
+        path = good ? def.good : def.bad; days = path.days; text = path.text; rework = !good;
+      } else { days = def.days; text = def.text; }
+      return {
+        html: `<h2 class="scene-title">${def.no} ${esc(def.title)}</h2>
+          ${say(def.from, esc(def.say))}
+          <div class="result-box ${rework ? 'bad' : (days <= 0.5 ? 'good' : 'bad')}">${rework ? '<strong>作り直しになる。</strong> ' : ''}${text}</div>
+          ${noteBox()}
+          <div class="choices">${choice(0, rework ? '作り直す' : '直す', '', days)}</div>`,
+        on() {
+          const c = card(S.current);
+          c.days += days; c.rework = rework; c.note = S.noteChecked; addDays(days);
+          S.dirty = true;
+          if (rework && !S.broke) { S.broke = true; S.scene = 'broken'; return; }
+          finishCard();
+        }
+      };
+    },
+    broken() {
+      const save = lastSave(), has = !!save;
+      return {
+        html: `<h2 class="scene-title">壊れた！</h2>
+          ${say('!', '<strong>作り直したら、今までの申込データが画面に出なくなった。</strong>どこを触ったせいなのか、すぐには分からない。', 'warn')}
+          <p class="tool-tip"><b>Git の出番。</b>前に保存した版があれば、そこまで戻してやり直せる。</p>
+          <div class="choices">
+            ${choice(0, '保存した版に戻して、やり直す', has ? `「${esc(save.label)}」の時点に戻る。` : '保存した版がないので選べない。', 0.5, { disabled: !has })}
+            ${choice(1, '壊れたところを手で探して直す', '1行ずつ、何を変えたかを思い出しながら直す。', 2)}
+          </div>`,
+        on(i) {
+          const d = i === 0 ? 0.5 : 2;
+          if (i === 0) S.reverted++; else S.manualFix++;
+          addDays(d); card(S.current).days += d; finishCard();
+        }
+      };
+    },
+    c5() {
+      const def = CARDS.c5;
+      return {
+        html: `<h2 class="scene-title">⑤ 顔写真で本人確認</h2>
+          ${say('PM', esc(def.say))}
+          ${say('あなた', '……これは、そもそも<strong>できるかどうか分からない</strong>。', 'dev')}
+          <p class="tool-tip"><b>Git の branch の出番。</b>本体とは別の作業場所を作れば、試して失敗しても捨てるだけで済む。</p>
+          ${noteBox()}
+          <div class="choices">
+            ${choice(0, '本体でそのまま作り始める', '動いているフォームに直接、顔写真の機能を足していく。', 3)}
+            ${choice(1, '別の作業場所（branch）で2日だけ試す', '本体はそのまま。2日でできるか見極める。', 2)}
+          </div>`,
+        on(i) {
+          const c = card('c5'); c.note = S.noteChecked;
+          if (i === 0) { S.c5way = 'main'; addDays(3); c.days += 3; c.rework = true; S.dirty = true; S.scene = 'c5main'; }
+          else {
+            S.c5way = 'branch'; addDays(2); c.days += 2;
+            S.commits.push({ label: '⑤ 顔写真を試す', branch: true, gone: true });
+            S.scene = 'c5end';
+          }
+        }
+      };
+    },
+    c5main() {
+      const save = lastSave(), has = !!save;
+      return {
+        html: `<h2 class="scene-title">3日やってみた結果</h2>
+          ${say('!', '<strong>写真の向きや明るさで、本人かどうかを見分けられない。</strong>今の道具とデータでは無理そう。しかも本体のフォームは、途中まで足した顔写真の部品でごちゃごちゃになった。', 'warn')}
+          <div class="choices">
+            ${choice(0, '保存した版に戻す', has ? `「${esc(save.label)}」の時点に戻る。` : '保存した版がないので選べない。', 0.5, { disabled: !has })}
+            ${choice(1, '足した部品を手で取り除く', '何を足したかを思い出しながら外していく。', 2)}
+          </div>`,
+        on(i) {
+          const d = i === 0 ? 0.5 : 2;
+          if (i === 0) S.reverted++; else S.manualFix++;
+          addDays(d); card('c5').days += d; S.scene = 'c5end';
+        }
+      };
+    },
+    c5end() {
+      const branch = S.c5way === 'branch';
+      return {
+        html: `<h2 class="scene-title">PMに報告する</h2>
+          ${branch ? say('あなた', '別の場所で2日試したけど、顔写真での本人確認は難しいと分かった。本体は無傷だよ。試した分は捨てた。', 'dev')
+                   : say('あなた', '3日やってみたけど、顔写真での本人確認はできなかった。本体を元に戻すのにも時間がかかった。', 'dev')}
+          ${say('PM', 'えっ、名前の欄と同じくらいだと思ってた……。じゃあ、<strong>当日は受付で社員証を見る</strong>ことにしよう。')}
+          <p class="tool-tip">簡単そうに見えることと、実は今の技術では難しいことは、見た目では区別がつかない。</p>
+          <div class="choices">${choice(0, 'カードを「完了」に動かす')}</div>`,
+        on() { finishCard(); }
+      };
+    },
+    review() {
+      const missing = S.cards.filter((c) => c.id !== 'v1' && !c.note);
+      return {
+        html: `<h2 class="scene-title">3か月後</h2>
+          ${say('PM', '新しく来た人が聞いてるよ。「なんで申込に番号を振ってるの？取り消しはなんで消さずに印なの？締切は何時基準？」')}
+          ${missing.length === 0
+            ? `<div class="result-box good"><strong>全部、プルリクエストに理由を書いてあった。</strong>リンクを渡すだけで答えられる。</div>`
+            : `<div class="result-box bad">理由を書いていなかった変更が <strong>${missing.length}件</strong> ある。${missing.map((c) => CARDS[c.id].no).join('')} について、当時のチャットや記憶をたどって調べ直す。</div>`}
+          <p class="tool-tip"><b>GitHub の出番。</b>コードは「何を変えたか」しか教えてくれない。「なぜ変えたか」は、Issue やプルリクエストに書かないと残らない。</p>
+          <div class="choices">${choice(0, missing.length ? '調べ直して答える' : '答える', '', missing.length * 0.5)}</div>`,
+        on() { S.reviewCost = missing.length * 0.5; addDays(S.reviewCost); S.scene = 'result'; }
+      };
+    },
+    result() {
+      const ratio = S.day / S.estimate;
+      const rows = S.cards.map((c) => `<tr><td>${CARDS[c.id].no} ${esc(CARDS[c.id].title)}${c.rework ? ' <span style="color:var(--bad);font-weight:700">作り直し</span>' : ''}</td><td class="num">${fmt(c.days)}</td></tr>`).join('')
+        + (S.reviewCost ? `<tr><td>3か月後に理由を調べ直した</td><td class="num">${fmt(S.reviewCost)}</td></tr>` : '');
+      const reworks = S.cards.filter((c) => c.rework && c.id !== 'c5');
+      const asks = Object.values(CARDS).filter((d) => d.ask).map((d) => `<li>${esc(d.ask)}</li>`).join('');
+      const lessonUncertain = S.c5way === 'heard'
+        ? '話を聞いた段階で、顔写真の確認は難しそうだと分かり、社員証を見る運用に決まった。作る前に分かれば、試す日数もかからない。'
+        : `⑤は作ってみるまで、できるかどうか分からなかった。${S.c5way === 'branch' ? '別の作業場所で試したので、本体は無事だった。' : '本体で試したので、戻すのにも時間がかかった。'}`;
+      const lessonRework = reworks.length
+        ? `${reworks.map((c) => CARDS[c.id].no).join('')}は作り直しになった。作る前に1つ聞いていれば、それぞれ0.5日で済んだ。`
+        : '①②④は作り直しにならなかった。作る前に決めておいたおかげ。';
+      const lessonTools = [
+        'Kanban の板には、どのカードに何日かかったかが残った。PMは板を見れば、遅れの理由が分かる。',
+        S.reverted ? `Git で保存した版に ${S.reverted}回 戻せた。` : (S.manualFix ? `保存した版がなかったので、${S.manualFix}回 手で直した。保存しておけば1回0.5日で済んだ。` : ''),
+        S.reviewCost ? `理由を書かなかった変更を、3か月後に調べ直した（${fmt(S.reviewCost)}）。` : 'プルリクエストに理由を書いたので、3か月後の質問にすぐ答えられた。'
+      ].filter(Boolean).join('');
+      return {
+        html: `<h2 class="scene-title">結果</h2>
+          <div class="big">
+            <span><span class="u">予想</span><br><span class="n">${fmt(S.estimate)}</span></span>
+            <span><span class="u">実際</span><br><span class="n ${ratio > 1.2 ? 'bad' : ''}">${fmt(S.day)}</span></span>
+            <span><span class="u">予想の</span><br><span class="n">${ratio.toFixed(1)}倍</span></span>
+          </div>
+          <p style="margin:0">作る前に全部聞いて決めた場合は、だいたい <strong>${fmt(IDEAL)}</strong> で終わる。</p>
+          <div class="tbl"><table><thead><tr><th>どこに日数がかかったか</th><th style="text-align:right">日数</th></tr></thead><tbody>${rows}</tbody></table></div>
+          <p class="label" style="margin-top:6px">このゲームで起きたこと</p>
+          <ul class="lessons">
+            <li><b>できるか分からないものがある</b><span>${lessonUncertain}</span></li>
+            <li><b>後から来る要望ほど、作り直しが大きい</b><span>${lessonRework}</span></li>
+            <li><b>大企業が、決めるのに時間をかける理由</b><span>${S.heard ? '最初に1日かけて話を聞いたので、大きな作り直しを避けられた。' : '最初に話を聞く1日を省いたぶん、後の作り直しで日数が増えた。'}③のように、聞いても分からないことは残る。</span></li>
+            <li><b>Kanban・Git・GitHub が要る理由</b><span>${lessonTools}</span></li>
+          </ul>
+          <p class="label" style="margin-top:6px">最初にPMへ聞けばよかった質問</p>
+          <ul class="qs">${asks}</ul>
+          <div class="row"><button class="btn" type="button" id="againBtn">もう一度遊ぶ</button><span style="color:var(--muted);font-size:13px">次は別の選び方を試してみよう</span></div>`,
+        on() {}
+      };
+    }
+  };
+
+  function finishCard() {
+    const c = card(S.current);
+    c.col = 'done'; S.current = null; S.resolved++;
+    S.boardMsg = '';
+    if (S.resolved === 1) {
+      addCard('c3');
+      S.boardMsg = say('PM', 'ごめん、もう1つ要望！<strong>③</strong>を貼っておいたよ。');
+    } else if (S.resolved === 3) {
+      addCard('c4');
+      if (S.heard) {
+        addCard('c5', { col: 'done', note: true });
+        S.c5way = 'heard'; S.resolved++;
+        S.boardMsg = say('海外支社', '<strong>④</strong>を貼ったよ。') + say('PM', '⑤の顔写真の件は、最初に話を聞いたときに難しそうと分かったから、受付で社員証を見ることにしてあるよ。');
+      } else {
+        addCard('c5');
+        S.boardMsg = say('PM', 'あと2つ！<strong>④⑤</strong>を貼っておいたよ。');
+      }
+    }
+    const left = S.cards.filter((x) => x.col !== 'done').length;
+    S.scene = left === 0 ? 'review' : 'board';
+  }
+
+  // ===== 描画 =====
+  let handler = null;
+  function render() {
+    const sc = SCENES[S.scene]();
+    handler = sc.on;
+    $('story').innerHTML = sc.html;
+    $('story').querySelectorAll('.choice').forEach((b) => b.addEventListener('click', () => {
+      const chk = $('noteChk'); if (chk) S.noteChecked = chk.checked;
+      handler(Number(b.dataset.i)); render();
+      $('story').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }));
+    const again = $('againBtn'); if (again) again.addEventListener('click', () => { S = fresh(); render(); });
+    const chk = $('noteChk'); if (chk) chk.addEventListener('change', () => { S.noteChecked = chk.checked; });
+    renderClock(); renderBoard(); renderGit(); renderForm();
+    S.fresh = {};
+  }
+  function renderClock() {
+    $('dayNum').textContent = fmt(S.day);
+    $('estNum').textContent = S.estimate ? fmt(S.estimate) : '―';
+    const max = Math.max(S.day, S.estimate || 1, IDEAL) * 1.1;
+    const f = $('barFill'); f.style.width = (S.day / max * 100) + '%';
+    f.classList.toggle('over', !!S.estimate && S.day > S.estimate);
+    const m = $('barMark'); m.hidden = !S.estimate; if (S.estimate) m.style.left = (S.estimate / max * 100) + '%';
+  }
+  function renderBoard() {
+    const cols = [['todo', 'やること'], ['doing', '作業中'], ['done', '完了']];
+    $('board').innerHTML = cols.map(([k, name]) => {
+      const list = S.cards.filter((c) => c.col === k);
+      const items = list.map((c) => {
+        const d = CARDS[c.id];
+        const clickable = k === 'todo' && S.scene === 'board';
+        const tag = clickable ? 'button type="button"' : 'div';
+        const end = clickable ? 'button' : 'div';
+        return `<${tag} class="kcard ${c.rework ? 'rework' : ''} ${S.fresh[c.id] ? 'new' : ''}" data-id="${c.id}"><span class="no">#${issueNo(c.id)} ${d.no}</span>${esc(d.title)}${c.days ? `<span class="days">${fmt(c.days)}</span>` : ''}</${end}>`;
+      }).join('');
+      return `<div class="col"><h3><span>${name}</span><span>${list.length}</span></h3>${items}</div>`;
+    }).join('');
+    $('board').querySelectorAll('button.kcard').forEach((b) => b.addEventListener('click', () => {
+      const todo = S.cards.filter((c) => c.col === 'todo');
+      const i = todo.findIndex((c) => c.id === b.dataset.id);
+      if (i >= 0 && handler) { handler(i); render(); }
+    }));
+  }
+  function renderGit() {
+    $('gitState').innerHTML = S.dirty ? '<span class="dirty">保存していない変更あり</span>' : (S.commits.length ? '<span class="clean">保存済み</span>' : '<span class="clean" style="color:var(--muted)">まだ何も作っていない</span>');
+    $('commitBtn').disabled = !S.dirty;
+    $('gitLog').innerHTML = S.commits.length
+      ? S.commits.slice().reverse().map((c) => `<div class="${c.branch ? 'branch' : ''}"><span class="dot"></span><span class="${c.gone ? 'gone' : ''}">${esc(c.label)}${c.branch ? '（branch・捨てた）' : ''}</span></div>`).join('')
+      : '<div class="empty">保存した版はまだない</div>';
+  }
+  $('commitBtn').addEventListener('click', () => {
+    const done = S.cards.filter((c) => c.col === 'done' || c.col === 'doing');
+    const last = done[done.length - 1];
+    const label = last ? `${CARDS[last.id].no} ${CARDS[last.id].title}` : '作業中';
+    S.commits.push({ label: label + 'まで' });
+    S.dirty = false; renderGit();
+  });
+  function renderForm() {
+    const d = S.design, done = (id) => card(id) && card(id).col === 'done';
+    const built = done('v1');
+    if (!built) { $('form').innerHTML = '<div class="none" style="color:var(--muted)">まだ作っていない</div>'; return; }
+    const id = d.q1 === 'b' || done('c1');
+    const cancel = d.q2 === 'b' || done('c2');
+    const len = done('c3');
+    const tz = done('c4');
+    const tzRec = d.q3 === 'b' || done('c4');
+    const f = (label, box, tag) => `<div class="f"><span>${label}</span><span class="box">${box}${tag ? ` <span class="tag">${tag}</span>` : ''}</span></div>`;
+    $('form').innerHTML = [
+      id ? f('申込番号', 'A-0042', '自動') : '',
+      f('名前', '田中 誠', len ? '10文字まで' : ''),
+      f('メール', 'tanaka@example.com'),
+      f('申込時刻', tzRec ? '10/20 14:05 日本時間' : '10/20 14:05'),
+      tz ? f('締切', '10/31 23:59 日本時間') : '',
+      cancel ? f('取り消し', '[ 取り消す ]') : '',
+      done('c5') ? f('本人確認', '当日、受付で社員証を見る') : ''
+    ].join('');
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
