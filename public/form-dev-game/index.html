@@ -166,18 +166,51 @@ td.num { text-align: right; font-family: var(--f-display); font-variant-numeric:
 .lessons li span { color: var(--muted); font-size: 14px; }
 ul.qs { margin: 0; padding-left: 1.2em; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
-</style>
 
+/* 難しさの内訳 */
+.bd { list-style: none; margin: 0; padding: 10px 12px; background: var(--bg); border-radius: 8px; display: grid; gap: 4px; font-size: 13px; }
+.bd li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }
+.bd li b { font-family: var(--f-display); font-weight: 400; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kind { font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 1px 6px; border-radius: 4px; background: var(--panel); color: var(--muted); border: 1px solid var(--line); white-space: nowrap; }
+.kind.ext { color: var(--accent); border-color: var(--accent); }
+.kind.code { color: var(--bad); border-color: var(--bad); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12px; padding: 2px 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); }
+.chip b { font-weight: 700; }
+/* 先回り準備 */
+.prep { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 10px; align-items: start; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px; cursor: pointer; }
+.prep:has(input:checked) { border-color: var(--accent); background: var(--bg); }
+.prep input { margin-top: 6px; }
+.prep .t { font-weight: 700; }
+.prep .d, .prep .hint { grid-column: 2 / -1; }
+.prep .d { color: var(--muted); font-size: 13px; }
+.total { display: flex; justify-content: space-between; font-size: 14px; padding: 0 4px; }
+.total b { font-family: var(--f-display); font-weight: 400; font-size: 18px; }
+/* 日数を伝える */
+.stepper { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.stepper .num { font-family: var(--f-display); font-size: clamp(30px, 6vw, 42px); min-width: 5.5em; text-align: center; font-variant-numeric: tabular-nums; }
+.stepper .num small { display: block; font-family: var(--f-body); font-size: 12px; color: var(--muted); }
+.btn.sm { padding: 6px 10px; font-size: 13px; }
+/* スコア */
+.score { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; font-family: var(--f-display); }
+.score .pts { font-size: clamp(48px, 9vw, 76px); line-height: 1; }
+.score .rank { font-size: 28px; padding: 2px 14px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); }
+td.mark { text-align: center; font-weight: 700; }
+td.mark.o { color: var(--good); }
+td.mark.x { color: var(--muted); }
+.code-size { font-size: 12px; color: var(--muted); }
+.code-size b { font-family: var(--f-display); font-weight: 400; color: var(--ink); font-size: 14px; }
+</style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div>
       <h1>申込フォーム開発ゲーム</h1>
-      <p class="sub">簡単なはずの開発で、後から何が起きるかを体験する（1人15分くらい）</p>
+      <p class="sub">簡単なはずの開発で、後から何が起きるかを体験する（1人20分くらい・8時間＝1日）</p>
     </div>
     <div class="clock" aria-live="polite">
-      <div class="clock-nums"><span><small>かかった日数</small><span id="dayNum">0日</span></span><span><small>あなたの予想</small><span id="estNum">―</span></span></div>
+      <div class="clock-nums"><span><small>かかった時間</small><span id="dayNum">0日</span></span><span><small id="estLabel">あなたの予想</small><span id="estNum">―</span></span></div>
       <div class="bar"><i id="barFill"></i><b id="barMark" hidden></b></div>
     </div>
   </header>
@@ -195,6 +228,7 @@ ul.qs { margin: 0; padding-left: 1.2em; }
           <span id="gitState"></span>
           <button class="btn" id="commitBtn" type="button">今の状態を保存する</button>
         </div>
+        <div class="code-size">いまのコードの量 <b id="codeSize">0行</b>（多いほど、直すときの確認に時間がかかる）</div>
         <div class="log" id="gitLog"></div>
       </section>
       <section class="panel">
@@ -207,55 +241,124 @@ ul.qs { margin: 0; padding-left: 1.2em; }
 
 <script>
 (function () {
+  // ===== 時間の決まり（すべて「時間」。8時間＝1日） =====
+  const HEAR_H = 6;          // 関係者に話を聞いて回る
+  const BUILD = { h: 8, lines: 300 };
+  // 今あるコードの量から、影響を確かめる時間と、確かめずに直したときに不具合が出る確率を出す
+  const CHECK_PER = { rework: 250, small: 1000, none: Infinity };   // この行数ごとに1時間
+  const BUG_PER = { rework: 1500, small: 5000, none: Infinity };    // この行数で確率100%
+  const BUG_MAX = { rework: 0.85, small: 0.5, none: 0 };
+  const r05 = (x) => Math.round(x * 2) / 2;
+  const checkH = (touch, code) => r05(code / CHECK_PER[touch]);
+  const bugRate = (touch, code) => Math.min(BUG_MAX[touch], code / BUG_PER[touch]);
+  const stepsH = (t) => t.steps.reduce((s, x) => s + x[1], 0);
+
   // ===== データ =====
   const DESIGN = [
     { key: 'q1', q: '申し込んだ人を、どうやって見分ける？',
-      a: { t: '名前で見分ける', d: '名前がそのまま目印になる。作るのが一番早い。', cost: 0 },
-      b: { t: '1人ずつ番号を振る', d: '名前とは別に、申込ごとに番号を付ける。', cost: 0.5 },
+      a: { t: '名前で見分ける', d: '名前がそのまま目印になる。作るのが一番早い。', h: 0, lines: 0 },
+      b: { t: '1人ずつ番号を振る', d: '名前とは別に、申込ごとに番号を付ける。', h: 2, lines: 60 },
       hint: '総務から「同じ名前の社員が何人かいる」と聞いた。' },
     { key: 'q2', q: '申込の取り消しは考える？',
-      a: { t: '考えない', d: '取り消しの話は出ていないので作らない。', cost: 0 },
-      b: { t: '「取り消し済み」の印を付けられるようにする', d: '消さずに印を付けて、誰が取り消したか残す。', cost: 0.5 },
+      a: { t: '考えない', d: '取り消しの話は出ていないので作らない。', h: 0, lines: 0 },
+      b: { t: '「取り消し済み」の印を付けられるようにする', d: '消さずに印を付けて、誰が取り消したか残す。', h: 3, lines: 80 },
       hint: '人事から「毎回、取り消しの連絡が何件も来る」と聞いた。' },
     { key: 'q3', q: '申し込んだ時刻は、どう記録する？',
-      a: { t: 'サーバーの時刻だけ記録する', d: '日本のサーバーの時計で記録する。', cost: 0 },
-      b: { t: 'どの国の時刻かも一緒に記録する', d: '日本時間か現地時間かが後から分かる。', cost: 0.5 },
+      a: { t: 'サーバーの時刻だけ記録する', d: '日本のサーバーの時計で記録する。', h: 0, lines: 0 },
+      b: { t: 'どの国の時刻かも一緒に記録する', d: '日本時間か現地時間かが後から分かる。', h: 1.5, lines: 40 },
       hint: '海外支社からも参加者がいると聞いた。' }
   ];
 
+  const PREP = [
+    { key: 'log', t: '管理者ログインと、ログを見る画面', d: '誰がいつ申し込んだか、エラーが起きたかを後から見られる。', h: 10, lines: 400, card: 'c6',
+      hint: '情報システム部「社内のシステムは、問い合わせに答えられるようにログを残すルールだよ」' },
+    { key: 'api', t: '外から名前とメールを受け取れる入口', d: 'ほかのシステムから申込データを入れられるように、入口を分けておく。', h: 6, lines: 200, card: 'c7',
+      hint: '総務「いずれ社員名簿システムから自動で入ったら楽だね」' },
+    { key: 'csv', t: '参加者一覧をCSVで書き出すボタン', d: 'Excel で開ける形で、申込者の一覧を書き出す。', h: 2.5, lines: 80, card: 'c8',
+      hint: '人事「当日の受付は紙の名簿でやるつもり」' },
+    { key: 'app', t: 'スマホアプリ版', d: 'iPhone と Android のアプリも作っておく。', h: 24, lines: 1200, card: null,
+      hint: 'みんな会社のPCから申し込む。アプリの話は誰からも出なかった。' },
+    { key: 'en', t: '英語の画面', d: '画面の文言を英語に切り替えられるようにする。', h: 10, lines: 300, card: null,
+      hint: '海外支社「画面は日本語で大丈夫だよ」' }
+  ];
+
+  const NAME_EXT = ['名簿システムの仕様を、情報システム部に確認する', 2, 12];
   const CARDS = {
     v1: { no: '初版', title: '名前とメールで申し込めるフォーム' },
-    c1: { no: '①', title: '同姓同名の人がいた', from: '総務',
+    c1: { no: '①', title: '同姓同名の人がいた', from: '総務', dep: 'q1',
       say: '「田中 誠」さんが2人いて、どっちの申込か分からないよ。',
-      dep: 'q1', bad: { days: 4, text: '名前で人を見分ける作りにしていた。1人ずつ番号を振るように保存の形を変えて、今までの申込も1件ずつ移し替える。' },
-      good: { days: 0.5, text: '最初から番号を振っていたので、画面に番号を出すだけで済む。' },
+      bad: { text: '名前で人を見分ける作りにしていた。保存の形から作り直しになる。', touch: 'rework', lines: 150,
+        steps: [['保存の形を変えて、番号を振る', 4], ['今までの申込を1件ずつ移し替える', 6], ['画面を直す', 2]] },
+      good: { text: '最初から番号を振っていたので、画面に番号を出すだけで済む。', touch: 'small', lines: 40,
+        steps: [['画面に番号を出す', 1.5]] },
       ask: '同じ名前の人はいますか？' },
-    c2: { no: '②', title: '申込を取り消したい', from: '人事',
+    c2: { no: '②', title: '申込を取り消したい', from: '人事', dep: 'q2',
       say: '間違えて申し込んだ人が「取り消したい」って。人数の集計からも外してね。',
-      dep: 'q2', bad: { days: 3, text: '取り消しを記録する場所がない。ただ消すと誰が取り消したか残らない。印を付ける形に作り直して、集計の計算も全部直す。' },
-      good: { days: 0.5, text: '印を付ける場所は最初からある。取り消しボタンを付けるだけで済む。' },
+      bad: { text: '取り消しを記録する場所がない。ただ消すと、誰が取り消したか残らない。', touch: 'rework', lines: 120,
+        steps: [['取り消しの印を付ける場所を作る', 3], ['人数の集計の計算を直す', 3], ['取り消しボタンを付ける', 2]] },
+      good: { text: '印を付ける場所は最初からある。取り消しボタンを付けるだけで済む。', touch: 'small', lines: 60,
+        steps: [['取り消しボタンを付ける', 2]] },
       ask: '申込を取り消すことはありますか？' },
     c3: { no: '③', title: '名前は10文字まで', from: 'PM',
       say: '名札に印刷するから、名前は10文字までにして。',
-      text: '文字数を数えるだけのつもりだった。でも「𠮷」のような字や絵文字は、見た目は1文字でも、コンピュータの数え方では2文字以上になる。数え方を決めてから直す。',
-      days: 1, ask: null },
-    c4: { no: '④', title: '締切は10/31 23:59', from: '海外支社',
+      task: { text: '数えるだけのつもりだった。でも「𠮷」のような字や絵文字は、見た目は1文字でも、コンピュータの数え方では2文字以上になる。話を聞いても、ここまでは予想できない。', touch: 'small', lines: 50,
+        steps: [['文字の数え方を調べて決める', 2], ['入力のチェックを直す', 2], ['名札に印刷して試す', 1]] },
+      ask: null },
+    c4: { no: '④', title: '締切は10/31 23:59', from: '海外支社', dep: 'q3',
       say: 'シンガポール支社からも参加するよ。締切は10/31の23:59だよね？',
-      dep: 'q3', bad: { days: 2, text: '記録していたのは日本のサーバーの時刻だけ。シンガポールの23:59は日本の0:59になる。どの国の時刻で締めるかを決めて、時刻の記録の仕方を直す。' },
-      good: { days: 0.5, text: 'どの国の時刻かも記録していたので、締切の判定を足すだけで済む。' },
+      bad: { text: '記録していたのは日本のサーバーの時刻だけ。シンガポールの23:59は、日本の0:59になる。', touch: 'rework', lines: 100,
+        steps: [['時刻の記録の仕方を直す', 3], ['今までの記録を日本時間に直す', 2], ['締切の判定を足す', 1.5]],
+        ext: ['どの国の時刻で締めるか、海外支社に確認する', 1, 4] },
+      good: { text: 'どの国の時刻かも記録していたので、締切の判定を足すだけで済む。', touch: 'small', lines: 40,
+        steps: [['締切の判定を足す', 1.5]] },
       ask: '海外から申し込む人はいますか？' },
     c5: { no: '⑤', title: '顔写真で本人確認', from: 'PM',
       say: '受付を楽にしたいから、顔写真で本人か確認できるようにして。名前の欄と同じくらいでできるでしょ？',
-      ask: '当日の本人確認はどうしますか？' }
+      main: { steps: [['顔写真で見分ける方法を調べる', 4], ['フォームに組み込んでみる', 16], ['社員の写真で試す', 4]], ext: ['顔認証サービスの試用を申し込む', 2, 6], lines: 500 },
+      branch: { steps: [['顔写真で見分ける方法を調べる', 4], ['別の場所で小さく試す', 8], ['結果をまとめる', 2]], ext: ['顔認証サービスの試用を申し込む', 2, 6] },
+      ask: '当日の本人確認はどうしますか？' },
+    c6: { no: '⑥', title: '申込が届いていない？', from: '人事', prep: 'log',
+      say: '「申し込んだのに確認できない」って人がいるよ。ログはどう管理してるの？',
+      bad: { text: 'ログを残していなかった。この人の原因は、もう調べられない。全部の処理にログを足すので、今あるコード全体に手が入る。', touch: 'rework', lines: 400,
+        steps: [['管理者ログインを作る', 4], ['全部の処理にログを記録する仕組みを足す', 4], ['ログを見る画面を作る', 3], ['問い合わせた人に謝って、再登録してもらう', 1]] },
+      good: { text: '管理者画面でログを見たら、メールアドレスの打ち間違いだと分かった。', touch: 'none', lines: 0,
+        steps: [['ログを見て原因を調べる', 1], ['その人に連絡する', 0.5]] },
+      ask: '問い合わせがあったとき、何を調べられるようにしますか？' },
+    c7: { no: '⑦', title: '社員名簿から読み込みたい', from: '総務', prep: 'api',
+      say: '来年は社員名簿システムから名前とメールを読み込んで、入力の手間をなくしたいな。',
+      bad: { text: '名前とメールの入力が、画面に直接くっついた作りになっている。入力と保存を切り離すところから作り直す。', touch: 'rework', lines: 350,
+        steps: [['入力と保存の処理を切り離す', 6], ['外から受け取る入口を作る', 4], ['画面をつなぎ直す', 3], ['名簿システムとつなぐ', 4]], ext: NAME_EXT },
+      good: { text: '受け取る入口を作っておいたので、名簿システムとつなぐだけで済む。ただし相手のシステムの確認は、準備していても省けない。', touch: 'small', lines: 150,
+        steps: [['名簿システムとつなぐ', 4]], ext: NAME_EXT },
+      ask: 'ほかのシステムとつなぐ予定はありますか？' },
+    c8: { no: '⑧', title: '参加者一覧を印刷したい', from: '人事', prep: 'csv',
+      say: '当日の受付用に、参加者の一覧を紙で印刷したいんだけど。',
+      bad: { text: '一覧を取り出す方法がない。書き出す機能を足す。', touch: 'small', lines: 80, addOnly: true,
+        steps: [['一覧を書き出す機能を足す', 3]] },
+      good: { text: 'CSVで書き出すボタンを用意してあった。押して Excel で印刷するだけ。', touch: 'none', lines: 0,
+        steps: [['書き出して印刷する', 0.5]] },
+      ask: '集まったデータは、どう使いますか？' }
   };
-  const IDEAL = 1 + 1.5 + 1 + 0.5 + 0.5 + 1 + 0.5;
+
+  // 一番うまくいったときの時間（話を聞く・番号/印/時刻を記録・当たる準備だけする・毎回確認する）
+  const IDEAL = (() => {
+    let h = HEAR_H + DESIGN.reduce((s, q) => s + q.b.h, 0) + 18.5 + BUILD.h;
+    let code = BUILD.lines + DESIGN.reduce((s, q) => s + q.b.lines, 0) + 680;
+    ['c1', 'c2', 'c3', 'c4', 'c6', 'c8', 'c7'].forEach((id) => {
+      const t = CARDS[id].task || CARDS[id].good;
+      h += stepsH(t) + checkH(t.touch, code) + (t.ext ? (t.ext[1] + t.ext[2]) / 2 : 0);
+      code += t.lines;
+    });
+    return h;
+  })();
 
   // ===== 状態 =====
   const fresh = () => ({
-    scene: 'intro', estimate: null, day: 0, heard: false, design: {}, dIdx: 0,
+    scene: 'intro', estimate: null, day: 0, heard: false, design: {}, dIdx: 0, prep: {}, promise: null, promiseDraft: 0,
     cards: [{ id: 'v1', col: 'todo', days: 0, rework: false, note: true }],
-    commits: [], dirty: false, broke: false, current: null, resolved: 0,
-    noteChecked: false, lastResult: null, c5way: null, reverted: 0, manualFix: 0, reviewCost: 0, fresh: {}
+    commits: [], dirty: false, current: null, resolved: 0, code: 0,
+    noteChecked: false, c5way: null, reverted: 0, manualFix: 0, reviewCost: 0, missing: 0, deliver: 0,
+    checkTotal: 0, skips: 0, bugs: 0, pendingBreak: null, lastMsg: '', boardMsg: '', fresh: {}
   });
   let S = (window.claude && window.claude.hot && window.claude.hot.data && window.claude.hot.data.S) || fresh();
   if (window.claude && window.claude.hot && window.claude.hot.snapshot) {
@@ -264,26 +367,44 @@ ul.qs { margin: 0; padding-left: 1.2em; }
 
   // ===== 小さな道具 =====
   const $ = (id) => document.getElementById(id);
-  const fmt = (d) => (Number.isInteger(d) ? d : d.toFixed(1)) + '日';
+  const num = (x) => (Number.isInteger(x) ? String(x) : x.toFixed(1));
+  const fmtH = (h) => num(h) + '時間';
+  const fmtD = (h) => (h / 8).toFixed(1) + '日';
+  const both = (h) => `${fmtD(h)}（${fmtH(h)}）`;
+  const lines = (n) => n.toLocaleString('ja-JP') + '行';
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const card = (id) => S.cards.find((c) => c.id === id);
-  const addDays = (d) => { S.day += d; };
+  const addDays = (h) => { S.day += h; };
   const issueNo = (id) => S.cards.findIndex((c) => c.id === id) + 1;
   const lastSave = () => S.commits.filter((c) => !c.branch).pop();
+  const rollExt = (ext) => (ext ? ext[1] + Math.round(Math.random() * (ext[2] - ext[1]) * 2) / 2 : 0);
   function addCard(id, extra) {
     S.cards.push(Object.assign({ id, col: 'todo', days: 0, rework: false, note: false }, extra || {}));
     S.fresh[id] = true;
   }
   function say(who, text, kind) {
-    const av = { PM: 'PM', 総務: '総', 人事: '人', 海外支社: '海', あなた: '私', '!': '!' }[who] || who.slice(0, 1);
+    const av = { PM: 'PM', 総務: '総', 人事: '人', 海外支社: '海', 情報システム部: '情', あなた: '私', '!': '!' }[who] || who.slice(0, 1);
     return `<div class="speaker"><div class="avatar ${kind || ''}">${esc(av)}</div><div class="bubble"><strong>${esc(who === '!' ? '' : who)}</strong>${who === '!' ? '' : '<br>'}${text}</div></div>`;
   }
+  // cost: 数字（時間）か、表示用の文字
   function choice(i, t, d, cost, opts) {
     opts = opts || {};
-    const c = cost == null ? '' : `<span class="cost ${cost === 0 ? 'zero' : ''}">${cost === 0 ? '+0日' : '+' + fmt(cost)}</span>`;
+    const label = cost == null ? '' : typeof cost === 'string' ? cost : (cost === 0 ? '+0時間' : '+' + fmtH(cost));
+    const c = label ? `<span class="cost ${cost === 0 ? 'zero' : ''}">${label}</span>` : '';
     return `<button class="choice" type="button" data-i="${i}" ${opts.disabled ? 'disabled' : ''}><span class="t">${t}</span>${c}${d ? `<span class="d">${d}</span>` : ''}${opts.hint ? `<span class="hint">${opts.hint}</span>` : ''}</button>`;
   }
-  const noteBox = () => `<label class="check"><input type="checkbox" id="noteChk" ${S.noteChecked ? 'checked' : ''}><span>なぜこう変えたかを、GitHub のプルリクエスト（変更の説明書き）に書いておく<br><span style="color:var(--muted);font-size:13px">書いても日数は増えない</span></span></label>`;
+  const rangeLabel = (base, ext) => ext ? `+${num(base + ext[1])}〜${num(base + ext[2])}時間` : (base === 0 ? '+0時間' : '+' + fmtH(base));
+  // 難しさの内訳（手順・外部システム・今あるコード）
+  function breakdown(t, check) {
+    const rows = t.steps.map((s) => `<li><span class="kind">手順</span><span>${esc(s[0])}</span><b>${fmtH(s[1])}</b></li>`);
+    if (t.ext) rows.push(`<li><span class="kind ext">外部</span><span>${esc(t.ext[0])}（相手しだい）</span><b>${num(t.ext[1])}〜${fmtH(t.ext[2])}</b></li>`);
+    if (check > 0) rows.push(`<li><span class="kind code">既存コード</span><span>今ある ${lines(S.code)} への影響を確かめる</span><b>${fmtH(check)}</b></li>`);
+    return `<ul class="bd">${rows.join('')}</ul>`;
+  }
+  function chips(t) {
+    return `<div class="chips"><span class="chip">手順 <b>${t.steps.length}個</b></span><span class="chip">外部システム <b>${t.ext ? 'あり' : 'なし'}</b></span><span class="chip">今あるコード <b>${lines(S.code)}</b></span></div>`;
+  }
+  const noteBox = () => `<label class="check"><input type="checkbox" id="noteChk" ${S.noteChecked ? 'checked' : ''}><span>なぜこう変えたかを、GitHub のプルリクエスト（変更の説明書き）に書いておく<br><span style="color:var(--muted);font-size:13px">書いても時間は増えない</span></span></label>`;
 
   // ===== 画面ごとの中身 =====
   const SCENES = {
@@ -291,7 +412,7 @@ ul.qs { margin: 0; padding-left: 1.2em; }
       return {
         html: `<h2 class="scene-title">依頼が来た</h2>
           ${say('PM', '社内イベントの参加申込フォームを作ってほしい。<strong>名前とメールを入れて保存するだけ</strong>でいいよ。簡単でしょ？')}
-          <p style="margin:0">あなたは開発の担当者。<strong>何日でできそう？</strong>予想をPMに伝えよう。</p>
+          <p style="margin:0">あなたは開発の担当者。まずは直感で、<strong>何日でできそう？</strong></p>
           <div class="est">${[1, 2, 3, 5].map((d, i) => choice(i, d + '日')).join('')}</div>`,
         on(i) { S.estimate = [1, 2, 3, 5][i]; S.scene = 'hearing'; }
       };
@@ -299,13 +420,13 @@ ul.qs { margin: 0; padding-left: 1.2em; }
     hearing() {
       return {
         html: `<h2 class="scene-title">作る前に</h2>
-          ${say('PM', `${S.estimate}日ね、了解！じゃあよろしく。`)}
-          <p style="margin:0">作り始める前に、総務・人事・海外支社に使い方を聞いて回ることもできる。そのぶん日数はかかる。</p>
+          ${say('PM', `${S.estimate}日くらいね。じゃあよろしく。`)}
+          <p style="margin:0">作り始める前に、総務・人事・海外支社・情報システム部に、使い方を聞いて回ることもできる。</p>
           <div class="choices">
             ${choice(0, 'すぐ作り始める', '言われたことはもう分かっている。', 0)}
-            ${choice(1, '関係者に話を聞いて回る', 'イベントの担当者に、どう使うつもりかを聞く。', 1)}
+            ${choice(1, '関係者に話を聞いて回る', '4つの部署に、どう使うつもりかを聞く。', HEAR_H)}
           </div>`,
-        on(i) { if (i === 1) { S.heard = true; addDays(1); } S.scene = 'design'; S.dIdx = 0; }
+        on(i) { if (i === 1) { S.heard = true; addDays(HEAR_H); } S.scene = 'design'; S.dIdx = 0; }
       };
     },
     design() {
@@ -314,26 +435,80 @@ ul.qs { margin: 0; padding-left: 1.2em; }
         html: `<h2 class="scene-title">作り方を決める（${S.dIdx + 1}/3）</h2>
           ${say('あなた', q.q, 'dev')}
           <div class="choices">
-            ${choice(0, q.a.t, q.a.d, q.a.cost)}
-            ${choice(1, q.b.t, q.b.d, q.b.cost, { hint: S.heard ? '話を聞いたとき: ' + q.hint : '' })}
+            ${choice(0, q.a.t, q.a.d, q.a.h)}
+            ${choice(1, q.b.t, q.b.d, q.b.h, { hint: S.heard ? '話を聞いたとき: ' + q.hint : '' })}
           </div>
           ${S.heard ? '' : '<p class="tool-tip">話を聞いていないので、どちらが要るかは分からない。</p>'}`,
         on(i) {
           S.design[q.key] = i === 0 ? 'a' : 'b';
-          addDays(i === 0 ? q.a.cost : q.b.cost);
+          addDays(i === 0 ? q.a.h : q.b.h);
           S.dIdx++;
-          if (S.dIdx >= DESIGN.length) S.scene = 'build';
+          if (S.dIdx >= DESIGN.length) S.scene = 'prep';
         }
       };
     },
+    prep() {
+      const items = PREP.map((p) => `<label class="prep"><input type="checkbox" data-prep="${p.key}" ${S.prep[p.key] ? 'checked' : ''}><span class="t">${esc(p.t)}</span><span class="cost">+${fmtH(p.h)}</span><span class="d">${esc(p.d)} コードが ${lines(p.lines)} 増える。</span>${S.heard ? `<span class="hint">${esc(p.hint)}</span>` : ''}</label>`).join('');
+      return {
+        html: `<h2 class="scene-title">先回りして準備する？</h2>
+          ${say('あなた', 'まだ誰にも頼まれていないけど、<strong>後から聞かれそうなこと</strong>を先に作っておくこともできる。', 'dev')}
+          <p class="tool-tip"><b>予想のコツ。</b>社内のシステムで後から聞かれやすいのは「何か起きたら調べられる？」「ほかのシステムとつなげる？」「データを取り出せる？」の3つ。${S.heard ? '' : '話を聞いていないので、どれが当たるかは予想するしかない。'}ただし、使われない準備は時間のむだになり、コードも増える。</p>
+          <div class="choices">${items}</div>
+          <div class="total"><span>選んだ準備の合計</span><b id="prepTotal">0時間</b></div>
+          <div class="choices">${choice(0, 'この準備で進める')}</div>`,
+        after() {
+          const upd = () => {
+            const sum = [...document.querySelectorAll('#story input[data-prep]')].filter((x) => x.checked).reduce((s, x) => s + PREP.find((p) => p.key === x.dataset.prep).h, 0);
+            $('prepTotal').textContent = fmtH(sum);
+          };
+          document.querySelectorAll('#story input[data-prep]').forEach((x) => x.addEventListener('change', upd));
+          upd();
+        },
+        on() {
+          S.prep = {};
+          document.querySelectorAll('#story input[data-prep]').forEach((x) => { if (x.checked) S.prep[x.dataset.prep] = true; });
+          addDays(PREP.filter((p) => S.prep[p.key]).reduce((s, p) => s + p.h, 0));
+          S.promiseDraft = Math.max(S.estimate * 8, Math.ceil((S.day + BUILD.h) / 4) * 4);
+          S.scene = 'promise';
+        }
+      };
+    },
+    promise() {
+      return {
+        html: `<h2 class="scene-title">PMに日数を伝える</h2>
+          ${say('PM', 'で、結局何日もらえばいい？')}
+          <p style="margin:0">ここまでで決まった作業は <strong>${fmtH(S.day + BUILD.h)}</strong>。話を聞く・作り方・先回りの準備・初版の分が入っている。後から来そうな要望の分も見込んで、何日もらうかを決めよう。</p>
+          <p class="tool-tip">もらいすぎるとPMは困る。足りないと約束を破ることになる。どちらも点数が下がる。</p>
+          <div class="stepper">
+            <button class="btn ghost sm" type="button" data-step="-8">−1日</button>
+            <button class="btn ghost sm" type="button" data-step="-4">−0.5日</button>
+            <span class="num" id="promiseNum"></span>
+            <button class="btn ghost sm" type="button" data-step="4">+0.5日</button>
+            <button class="btn ghost sm" type="button" data-step="8">+1日</button>
+          </div>
+          <div class="choices">${choice(0, 'この日数で伝える')}</div>`,
+        after() {
+          const show = () => { $('promiseNum').innerHTML = `${(S.promiseDraft / 8).toFixed(1)}日<small>${fmtH(S.promiseDraft)}</small>`; };
+          document.querySelectorAll('#story [data-step]').forEach((b) => b.addEventListener('click', () => {
+            S.promiseDraft = Math.max(8, Math.min(240, S.promiseDraft + Number(b.dataset.step)));
+            show();
+          }));
+          show();
+        },
+        on() { S.promise = S.promiseDraft; S.scene = 'build'; }
+      };
+    },
     build() {
+      const more = S.promise > S.estimate * 8;
       return {
         html: `<h2 class="scene-title">初版を作る</h2>
-          <p style="margin:0">作り方は決まった。いよいよ作る。</p>
-          <div class="choices">${choice(0, '初版を作る', '名前とメールを入れて保存できるフォーム。', 1)}</div>`,
+          ${more ? say('PM', `えっ、最初は${S.estimate}日って言ってたよね？……でも、後から来そうな話を聞いて納得した。<strong>${fmtD(S.promise)}</strong>でいこう。`)
+                 : say('PM', `了解、<strong>${fmtD(S.promise)}</strong>ね！`)}
+          <div class="choices">${choice(0, '初版を作る', '名前とメールを入れて保存できるフォーム。準備したものも一緒に作る。', BUILD.h)}</div>`,
         on() {
-          addDays(1);
-          const v = card('v1'); v.col = 'done'; v.days = 1 + (S.heard ? 1 : 0) + DESIGN.reduce((s, q) => s + (S.design[q.key] === 'b' ? 0.5 : 0), 0);
+          addDays(BUILD.h);
+          S.code += BUILD.lines + DESIGN.reduce((s, q) => s + (S.design[q.key] === 'b' ? q.b.lines : 0), 0) + PREP.reduce((s, p) => s + (S.prep[p.key] ? p.lines : 0), 0);
+          const v = card('v1'); v.col = 'done'; v.days = S.day;
           S.dirty = true; S.scene = 'built';
         }
       };
@@ -341,7 +516,7 @@ ul.qs { margin: 0; padding-left: 1.2em; }
     built() {
       return {
         html: `<h2 class="scene-title">初版ができた</h2>
-          ${say('PM', `おお、できたね！今は ${fmt(S.day)}。さっそく公開しよう。`)}
+          ${say('PM', `おお、できたね！ここまで ${fmtD(S.day)}。さっそく公開しよう。`)}
           <p class="tool-tip"><b>Git の出番。</b>右の「今の状態を保存する」を押すと、この動く版をあとで呼び戻せるようになる。押すかどうかは自由。</p>
           <div class="choices">${choice(0, '公開する', '社内のみんなに使ってもらう。')}</div>`,
         on() {
@@ -356,47 +531,68 @@ ul.qs { margin: 0; padding-left: 1.2em; }
       return {
         html: `<h2 class="scene-title">次はどれに取りかかる？</h2>
           ${S.boardMsg || ''}
-          <p class="tool-tip"><b>Kanban の出番。</b>要望は1枚ずつカードになって「やること」に並ぶ。PMは板を見れば、何が待っていて何が終わったかが分かる。</p>
+          <p class="tool-tip"><b>Kanban の出番。</b>要望は1枚ずつカードになって「やること」に並ぶ。PMは板を見れば、何が待っていて、何にどれだけ時間がかかったかが分かる。</p>
           <div class="choices">${todo.map((c, i) => choice(i, `${CARDS[c.id].no} ${CARDS[c.id].title}`, `${CARDS[c.id].from}より`)).join('')}</div>`,
         on(i) { const c = todo[i]; c.col = 'doing'; S.current = c.id; S.noteChecked = false; S.scene = c.id === 'c5' ? 'c5' : 'card'; }
       };
     },
     card() {
       const def = CARDS[S.current];
-      let path, days, text, rework = false;
-      if (def.dep) {
-        const good = S.design[def.dep] === 'b';
-        path = good ? def.good : def.bad; days = path.days; text = path.text; rework = !good;
-      } else { days = def.days; text = def.text; }
+      let t, rework = false;
+      if (def.task) t = def.task;
+      else {
+        const good = def.dep ? S.design[def.dep] === 'b' : !!S.prep[def.prep];
+        t = good ? def.good : def.bad; rework = !good && !t.addOnly;
+      }
+      const base = stepsH(t), check = checkH(t.touch, S.code), p = bugRate(t.touch, S.code);
+      const opts = check > 0
+        ? choice(0, rework ? '影響を確かめてから作り直す' : '影響を確かめてから直す', '今あるコードを一通り確かめる。', rangeLabel(base + check, t.ext))
+          + choice(1, rework ? '確かめずに、なんとなく作り直す' : '確かめずに、なんとなく直す', `不具合が出る確率 約${Math.round(p * 100)}%。コードが多いほど上がる。`, rangeLabel(base, t.ext))
+        : choice(0, '直す', '', rangeLabel(base, t.ext));
       return {
         html: `<h2 class="scene-title">${def.no} ${esc(def.title)}</h2>
           ${say(def.from, esc(def.say))}
-          <div class="result-box ${rework ? 'bad' : (days <= 0.5 ? 'good' : 'bad')}">${rework ? '<strong>作り直しになる。</strong> ' : ''}${text}</div>
+          <div class="result-box ${rework ? 'bad' : (base + check <= 2 ? 'good' : 'bad')}">${rework ? '<strong>作り直しになる。</strong> ' : ''}${esc(t.text)}</div>
+          ${chips(t)}
+          ${breakdown(t, check)}
           ${noteBox()}
-          <div class="choices">${choice(0, rework ? '作り直す' : '直す', '', days)}</div>`,
-        on() {
+          <div class="choices">${opts}</div>`,
+        on(i) {
           const c = card(S.current);
-          c.days += days; c.rework = rework; c.note = S.noteChecked; addDays(days);
-          S.dirty = true;
-          if (rework && !S.broke) { S.broke = true; S.scene = 'broken'; return; }
+          const ext = rollExt(t.ext);
+          const skip = check > 0 && i === 1;
+          const h = base + ext + (skip ? 0 : check);
+          c.days += h; c.rework = rework; c.note = S.noteChecked; addDays(h);
+          if (!skip) S.checkTotal += check;
+          S.code += t.lines; S.dirty = true;
+          S.lastMsg = t.ext ? `${def.no}は「${t.ext[0]}」に ${fmtH(ext)} かかった（予想は ${num(t.ext[1])}〜${fmtH(t.ext[2])}）。` : '';
+          if (skip) {
+            S.skips++;
+            if (Math.random() < p) { S.bugs++; S.pendingBreak = { touch: t.touch }; S.scene = 'broken'; return; }
+            S.lastMsg += '確かめずに直したけど、今回は不具合が出なかった。運が良かった。';
+          }
           finishCard();
         }
       };
     },
     broken() {
       const save = lastSave(), has = !!save;
+      const redo = 1 + checkH(S.pendingBreak.touch, S.code);
+      const hunt = r05(S.code / 100);
       return {
-        html: `<h2 class="scene-title">壊れた！</h2>
-          ${say('!', '<strong>作り直したら、今までの申込データが画面に出なくなった。</strong>どこを触ったせいなのか、すぐには分からない。', 'warn')}
-          <p class="tool-tip"><b>Git の出番。</b>前に保存した版があれば、そこまで戻してやり直せる。</p>
+        html: `<h2 class="scene-title">不具合が出た！</h2>
+          ${say('!', '<strong>確かめずに直したら、今までの申込データが画面に出なくなった。</strong>どこを触ったせいなのか、すぐには分からない。', 'warn')}
+          <p class="tool-tip"><b>Git の出番。</b>前に保存した版があれば、そこまで戻して、今度は確かめながらやり直せる。</p>
           <div class="choices">
-            ${choice(0, '保存した版に戻して、やり直す', has ? `「${esc(save.label)}」の時点に戻る。` : '保存した版がないので選べない。', 0.5, { disabled: !has })}
-            ${choice(1, '壊れたところを手で探して直す', '1行ずつ、何を変えたかを思い出しながら直す。', 2)}
+            ${choice(0, '保存した版に戻して、確かめながらやり直す', has ? `「${esc(save.label)}」の時点に戻す（1時間）＋影響を確かめる（${fmtH(redo - 1)}）。` : '保存した版がないので選べない。', redo, { disabled: !has })}
+            ${choice(1, '壊れたところを手で探して直す', `今ある ${lines(S.code)} の中から、原因を1行ずつ探す。`, hunt)}
           </div>`,
         on(i) {
-          const d = i === 0 ? 0.5 : 2;
+          const h = i === 0 ? redo : hunt;
           if (i === 0) S.reverted++; else S.manualFix++;
-          addDays(d); card(S.current).days += d; finishCard();
+          addDays(h); card(S.current).days += h; S.pendingBreak = null;
+          S.lastMsg += i === 0 ? '保存した版に戻して、やり直した。' : '原因を探すのに時間がかかった。';
+          finishCard();
         }
       };
     },
@@ -409,33 +605,36 @@ ul.qs { margin: 0; padding-left: 1.2em; }
           <p class="tool-tip"><b>Git の branch の出番。</b>本体とは別の作業場所を作れば、試して失敗しても捨てるだけで済む。</p>
           ${noteBox()}
           <div class="choices">
-            ${choice(0, '本体でそのまま作り始める', '動いているフォームに直接、顔写真の機能を足していく。', 3)}
-            ${choice(1, '別の作業場所（branch）で2日だけ試す', '本体はそのまま。2日でできるか見極める。', 2)}
-          </div>`,
+            ${choice(0, '本体でそのまま作り始める', '動いているフォームに直接、顔写真の機能を足していく。', rangeLabel(stepsH(def.main), def.main.ext))}
+            ${choice(1, '別の作業場所（branch）で小さく試す', '本体はそのまま。できるかどうかを先に見極める。', rangeLabel(stepsH(def.branch), def.branch.ext))}
+          </div>
+          <p class="label" style="margin:0">本体で作る場合の内訳</p>
+          ${breakdown(def.main, 0)}`,
         on(i) {
           const c = card('c5'); c.note = S.noteChecked;
-          if (i === 0) { S.c5way = 'main'; addDays(3); c.days += 3; c.rework = true; S.dirty = true; S.scene = 'c5main'; }
-          else {
-            S.c5way = 'branch'; addDays(2); c.days += 2;
-            S.commits.push({ label: '⑤ 顔写真を試す', branch: true, gone: true });
-            S.scene = 'c5end';
-          }
+          const t = i === 0 ? def.main : def.branch;
+          const h = stepsH(t) + rollExt(t.ext);
+          addDays(h); c.days += h;
+          if (i === 0) { S.c5way = 'main'; c.rework = true; S.code += def.main.lines; S.dirty = true; S.scene = 'c5main'; }
+          else { S.c5way = 'branch'; S.commits.push({ label: '⑤ 顔写真を試す', branch: true, gone: true }); S.scene = 'c5end'; }
         }
       };
     },
     c5main() {
       const save = lastSave(), has = !!save;
+      const hunt = r05(S.code / 80);
       return {
-        html: `<h2 class="scene-title">3日やってみた結果</h2>
-          ${say('!', '<strong>写真の向きや明るさで、本人かどうかを見分けられない。</strong>今の道具とデータでは無理そう。しかも本体のフォームは、途中まで足した顔写真の部品でごちゃごちゃになった。', 'warn')}
+        html: `<h2 class="scene-title">やってみた結果</h2>
+          ${say('!', '<strong>写真の向きや明るさで、本人かどうかを見分けられない。</strong>今の道具とデータでは無理そう。しかも本体のフォームに、顔写真の部品が500行も混ざった。', 'warn')}
           <div class="choices">
-            ${choice(0, '保存した版に戻す', has ? `「${esc(save.label)}」の時点に戻る。` : '保存した版がないので選べない。', 0.5, { disabled: !has })}
-            ${choice(1, '足した部品を手で取り除く', '何を足したかを思い出しながら外していく。', 2)}
+            ${choice(0, '保存した版に戻す', has ? `「${esc(save.label)}」の時点に戻る。` : '保存した版がないので選べない。', 2, { disabled: !has })}
+            ${choice(1, '足した部品を手で取り除く', `今ある ${lines(S.code)} の中から、足した部分を探して外す。`, hunt)}
           </div>`,
         on(i) {
-          const d = i === 0 ? 0.5 : 2;
+          const h = i === 0 ? 2 : hunt;
           if (i === 0) S.reverted++; else S.manualFix++;
-          addDays(d); card('c5').days += d; S.scene = 'c5end';
+          S.code -= CARDS.c5.main.lines;
+          addDays(h); card('c5').days += h; S.scene = 'c5end';
         }
       };
     },
@@ -443,12 +642,12 @@ ul.qs { margin: 0; padding-left: 1.2em; }
       const branch = S.c5way === 'branch';
       return {
         html: `<h2 class="scene-title">PMに報告する</h2>
-          ${branch ? say('あなた', '別の場所で2日試したけど、顔写真での本人確認は難しいと分かった。本体は無傷だよ。試した分は捨てた。', 'dev')
-                   : say('あなた', '3日やってみたけど、顔写真での本人確認はできなかった。本体を元に戻すのにも時間がかかった。', 'dev')}
+          ${branch ? say('あなた', '別の場所で試したけど、顔写真での本人確認は難しいと分かった。本体は無傷だよ。試した分は捨てた。', 'dev')
+                   : say('あなた', 'やってみたけど、顔写真での本人確認はできなかった。本体を元に戻すのにも時間がかかった。', 'dev')}
           ${say('PM', 'えっ、名前の欄と同じくらいだと思ってた……。じゃあ、<strong>当日は受付で社員証を見る</strong>ことにしよう。')}
           <p class="tool-tip">簡単そうに見えることと、実は今の技術では難しいことは、見た目では区別がつかない。</p>
           <div class="choices">${choice(0, 'カードを「完了」に動かす')}</div>`,
-        on() { finishCard(); }
+        on() { S.lastMsg = ''; finishCard(); }
       };
     },
     review() {
@@ -458,46 +657,68 @@ ul.qs { margin: 0; padding-left: 1.2em; }
           ${say('PM', '新しく来た人が聞いてるよ。「なんで申込に番号を振ってるの？取り消しはなんで消さずに印なの？締切は何時基準？」')}
           ${missing.length === 0
             ? `<div class="result-box good"><strong>全部、プルリクエストに理由を書いてあった。</strong>リンクを渡すだけで答えられる。</div>`
-            : `<div class="result-box bad">理由を書いていなかった変更が <strong>${missing.length}件</strong> ある。${missing.map((c) => CARDS[c.id].no).join('')} について、当時のチャットや記憶をたどって調べ直す。</div>`}
+            : `<div class="result-box bad">理由を書いていなかった変更が <strong>${missing.length}件</strong> ある。${missing.map((c) => CARDS[c.id].no).join('')} について、当時のチャットや記憶をたどって調べ直す（1件2時間）。</div>`}
           <p class="tool-tip"><b>GitHub の出番。</b>コードは「何を変えたか」しか教えてくれない。「なぜ変えたか」は、Issue やプルリクエストに書かないと残らない。</p>
-          <div class="choices">${choice(0, missing.length ? '調べ直して答える' : '答える', '', missing.length * 0.5)}</div>`,
-        on() { S.reviewCost = missing.length * 0.5; addDays(S.reviewCost); S.scene = 'result'; }
+          <div class="choices">${choice(0, missing.length ? '調べ直して答える' : '答える', '', missing.length * 2)}</div>`,
+        on() { S.deliver = S.day; S.missing = missing.length; S.reviewCost = missing.length * 2; addDays(S.reviewCost); S.scene = 'result'; }
       };
     },
     result() {
-      const ratio = S.day / S.estimate;
-      const rows = S.cards.map((c) => `<tr><td>${CARDS[c.id].no} ${esc(CARDS[c.id].title)}${c.rework ? ' <span style="color:var(--bad);font-weight:700">作り直し</span>' : ''}</td><td class="num">${fmt(c.days)}</td></tr>`).join('')
-        + (S.reviewCost ? `<tr><td>3か月後に理由を調べ直した</td><td class="num">${fmt(S.reviewCost)}</td></tr>` : '');
+      const over = (S.deliver - S.promise) / 8;
+      const ptPromise = Math.round(over > 0 ? Math.max(0, 40 - 8 * over) : Math.max(10, 40 - 3 * -over));
+      const ptSpeed = Math.round(Math.max(0, Math.min(40, 40 - 4 * Math.max(0, (S.deliver - IDEAL) / 8))));
+      const ptNote = Math.round(Math.max(0, 20 - 2.5 * S.missing));
+      const total = ptPromise + ptSpeed + ptNote;
+      const rank = total >= 90 ? 'S' : total >= 75 ? 'A' : total >= 55 ? 'B' : 'C';
+      const rows = S.cards.map((c) => `<tr><td>${c.id === 'v1' ? '話を聞く・作り方・先回りの準備・初版' : CARDS[c.id].no + ' ' + esc(CARDS[c.id].title)}${c.rework ? ' <span style="color:var(--bad);font-weight:700">作り直し</span>' : ''}</td><td class="num">${fmtH(c.days)}</td></tr>`).join('')
+        + (S.reviewCost ? `<tr><td>3か月後に理由を調べ直した</td><td class="num">${fmtH(S.reviewCost)}</td></tr>` : '');
+      const prepRows = PREP.map((p) => {
+        const did = !!S.prep[p.key], asked = !!p.card;
+        let res;
+        if (did && asked) res = `当たり。${CARDS[p.card].no}が ${fmtH(card(p.card).days)} で済んだ`;
+        else if (did) res = `外れ。${fmtH(p.h)} とコード ${lines(p.lines)} がむだになった`;
+        else if (asked) res = `${CARDS[p.card].no}で後から作った（${fmtH(card(p.card).days)}）`;
+        else res = '作らなくて正解';
+        return `<tr><td>${esc(p.t)}</td><td class="mark ${did ? 'o' : 'x'}">${did ? '○' : '×'}</td><td class="mark ${asked ? 'o' : 'x'}">${asked ? '○' : '×'}</td><td>${res}</td></tr>`;
+      }).join('');
+      const hits = PREP.filter((p) => S.prep[p.key] && p.card).length;
+      const misses = PREP.filter((p) => S.prep[p.key] && !p.card).length;
       const reworks = S.cards.filter((c) => c.rework && c.id !== 'c5');
       const asks = Object.values(CARDS).filter((d) => d.ask).map((d) => `<li>${esc(d.ask)}</li>`).join('');
-      const lessonUncertain = S.c5way === 'heard'
-        ? '話を聞いた段階で、顔写真の確認は難しそうだと分かり、社員証を見る運用に決まった。作る前に分かれば、試す日数もかからない。'
-        : `⑤は作ってみるまで、できるかどうか分からなかった。${S.c5way === 'branch' ? '別の作業場所で試したので、本体は無事だった。' : '本体で試したので、戻すのにも時間がかかった。'}`;
-      const lessonRework = reworks.length
-        ? `${reworks.map((c) => CARDS[c.id].no).join('')}は作り直しになった。作る前に1つ聞いていれば、それぞれ0.5日で済んだ。`
-        : '①②④は作り直しにならなかった。作る前に決めておいたおかげ。';
-      const lessonTools = [
-        'Kanban の板には、どのカードに何日かかったかが残った。PMは板を見れば、遅れの理由が分かる。',
-        S.reverted ? `Git で保存した版に ${S.reverted}回 戻せた。` : (S.manualFix ? `保存した版がなかったので、${S.manualFix}回 手で直した。保存しておけば1回0.5日で済んだ。` : ''),
-        S.reviewCost ? `理由を書かなかった変更を、3か月後に調べ直した（${fmt(S.reviewCost)}）。` : 'プルリクエストに理由を書いたので、3か月後の質問にすぐ答えられた。'
-      ].filter(Boolean).join('');
+      const lessons = [
+        ['できるか分からないものがある', S.c5way === 'heard'
+          ? '話を聞いた段階で、顔写真の確認は難しそうだと分かった。社員証を見る運用に決まったので、試す時間もかからなかった。'
+          : `⑤は作ってみるまで、できるかどうか分からなかった。${S.c5way === 'branch' ? '別の作業場所で試したので、本体は無事だった。' : '本体で試したので、戻すのにも時間がかかった。'}`],
+        ['なんとなく作ると、後で時間がかかる', reworks.length
+          ? `${reworks.map((c) => CARDS[c.id].no).join('')}は作り直しになった。作る前に聞いて決めていれば、どれも短く済んだ。`
+          : '作り直しは1つもなかった。作る前に決めておいたおかげ。'],
+        ['コードが増えるほど、直すのが重くなる', `最後はコードが ${lines(S.code)} になった。${S.checkTotal ? `影響を確かめるだけで合計 ${fmtH(S.checkTotal)} かかった。` : '影響は一度も確かめなかった。'}${S.skips ? `確かめずに直したのは${S.skips}回で、そのうち${S.bugs}回は不具合が出た。` : ''}${S.prep.app || S.prep.en ? '使われなかった準備のコードも、確かめる量を増やした。' : ''}`],
+        ['先回りは、当たれば得で、外れれば損', `${hits + misses ? `準備が当たったのは${hits}個、外れたのは${misses}個。` : `先回りの準備はしなかった。⑥⑦⑧は後から作って、合計 ${fmtH(['c6', 'c7', 'c8'].reduce((s, id) => s + card(id).days, 0))} かかった。`}外部システムの確認のように、準備しても省けない時間もある。`],
+        ['大企業が、決めるのに時間をかける理由', `${S.heard ? '最初に話を聞いたので、何を準備すればいいかが分かった。' : '話を聞かなかったので、何を準備するかは勘で選ぶしかなかった。'}③のように、聞いても分からないことは残る。`],
+        ['Kanban・Git・GitHub が要る理由', ['Kanban の板には、どのカードに何時間かかったかが残った。',
+          S.reverted ? `Git で保存した版に ${S.reverted}回 戻せた。` : (S.manualFix ? `保存した版がなかったので、${S.manualFix}回 手で原因を探した。` : ''),
+          S.reviewCost ? `理由を書かなかった変更を、3か月後に調べ直した（${fmtH(S.reviewCost)}）。` : 'プルリクエストに理由を書いたので、3か月後の質問にすぐ答えられた。'].join('')]
+      ].map(([b, s]) => `<li><b>${b}</b><span>${s}</span></li>`).join('');
       return {
         html: `<h2 class="scene-title">結果</h2>
+          <div class="score"><span class="pts">${total}点</span><span class="rank">${rank}</span></div>
           <div class="big">
-            <span><span class="u">予想</span><br><span class="n">${fmt(S.estimate)}</span></span>
-            <span><span class="u">実際</span><br><span class="n ${ratio > 1.2 ? 'bad' : ''}">${fmt(S.day)}</span></span>
-            <span><span class="u">予想の</span><br><span class="n">${ratio.toFixed(1)}倍</span></span>
+            <span><span class="u">直感の予想</span><br><span class="n">${S.estimate}日</span></span>
+            <span><span class="u">約束した日数</span><br><span class="n">${fmtD(S.promise)}</span></span>
+            <span><span class="u">実際</span><br><span class="n ${S.deliver > S.promise ? 'bad' : ''}">${fmtD(S.deliver)}</span></span>
           </div>
-          <p style="margin:0">作る前に全部聞いて決めた場合は、だいたい <strong>${fmt(IDEAL)}</strong> で終わる。</p>
-          <div class="tbl"><table><thead><tr><th>どこに日数がかかったか</th><th style="text-align:right">日数</th></tr></thead><tbody>${rows}</tbody></table></div>
+          <div class="tbl"><table><thead><tr><th>点数の内訳</th><th style="text-align:right">点</th></tr></thead><tbody>
+            <tr><td>約束を守れたか（約束 ${both(S.promise)}、実際 ${both(S.deliver)}）</td><td class="num">${ptPromise} / 40</td></tr>
+            <tr><td>速さ（一番うまくいったときの目安は ${both(IDEAL)}）</td><td class="num">${ptSpeed} / 40</td></tr>
+            <tr><td>3か月後に、変えた理由を説明できたか</td><td class="num">${ptNote} / 20</td></tr>
+          </tbody></table></div>
+          <p class="label" style="margin-top:6px">先回りの準備の答え合わせ</p>
+          <div class="tbl"><table><thead><tr><th>準備</th><th>準備した</th><th>頼まれた</th><th>結果</th></tr></thead><tbody>${prepRows}</tbody></table></div>
+          <p class="label" style="margin-top:6px">どこに時間がかかったか</p>
+          <div class="tbl"><table><tbody>${rows}</tbody></table></div>
           <p class="label" style="margin-top:6px">このゲームで起きたこと</p>
-          <ul class="lessons">
-            <li><b>できるか分からないものがある</b><span>${lessonUncertain}</span></li>
-            <li><b>後から来る要望ほど、作り直しが大きい</b><span>${lessonRework}</span></li>
-            <li><b>大企業が、決めるのに時間をかける理由</b><span>${S.heard ? '最初に1日かけて話を聞いたので、大きな作り直しを避けられた。' : '最初に話を聞く1日を省いたぶん、後の作り直しで日数が増えた。'}③のように、聞いても分からないことは残る。</span></li>
-            <li><b>Kanban・Git・GitHub が要る理由</b><span>${lessonTools}</span></li>
-          </ul>
-          <p class="label" style="margin-top:6px">最初にPMへ聞けばよかった質問</p>
+          <ul class="lessons">${lessons}</ul>
+          <p class="label" style="margin-top:6px">最初に聞けばよかった質問</p>
           <ul class="qs">${asks}</ul>
           <div class="row"><button class="btn" type="button" id="againBtn">もう一度遊ぶ</button><span style="color:var(--muted);font-size:13px">次は別の選び方を試してみよう</span></div>`,
         on() {}
@@ -508,21 +729,29 @@ ul.qs { margin: 0; padding-left: 1.2em; }
   function finishCard() {
     const c = card(S.current);
     c.col = 'done'; S.current = null; S.resolved++;
-    S.boardMsg = '';
+    let msg = S.lastMsg ? `<div class="result-box">${S.lastMsg}</div>` : '';
+    S.lastMsg = '';
     if (S.resolved === 1) {
       addCard('c3');
-      S.boardMsg = say('PM', 'ごめん、もう1つ要望！<strong>③</strong>を貼っておいたよ。');
+      msg += say('PM', 'ごめん、もう1つ要望！<strong>③</strong>を貼っておいたよ。');
     } else if (S.resolved === 3) {
       addCard('c4');
       if (S.heard) {
         addCard('c5', { col: 'done', note: true });
         S.c5way = 'heard'; S.resolved++;
-        S.boardMsg = say('海外支社', '<strong>④</strong>を貼ったよ。') + say('PM', '⑤の顔写真の件は、最初に話を聞いたときに難しそうと分かったから、受付で社員証を見ることにしてあるよ。');
+        msg += say('海外支社', '<strong>④</strong>を貼ったよ。') + say('PM', '⑤の顔写真の件は、最初に話を聞いたときに難しそうと分かったから、受付で社員証を見ることにしてあるよ。');
       } else {
         addCard('c5');
-        S.boardMsg = say('PM', 'あと2つ！<strong>④⑤</strong>を貼っておいたよ。');
+        msg += say('PM', 'あと2つ！<strong>④⑤</strong>を貼っておいたよ。');
       }
+    } else if (S.resolved === 5) {
+      addCard('c6'); addCard('c8');
+      msg += say('PM', 'イベントが近づいてきた。<strong>⑥⑧</strong>が来てるよ。');
+    } else if (S.resolved === 7) {
+      addCard('c7');
+      msg += say('総務', 'イベントは無事に終わった！来年に向けて<strong>⑦</strong>をお願い。');
     }
+    S.boardMsg = msg;
     const left = S.cards.filter((x) => x.col !== 'done').length;
     S.scene = left === 0 ? 'review' : 'board';
   }
@@ -540,16 +769,19 @@ ul.qs { margin: 0; padding-left: 1.2em; }
     }));
     const again = $('againBtn'); if (again) again.addEventListener('click', () => { S = fresh(); render(); });
     const chk = $('noteChk'); if (chk) chk.addEventListener('change', () => { S.noteChecked = chk.checked; });
+    if (sc.after) sc.after();
     renderClock(); renderBoard(); renderGit(); renderForm();
     S.fresh = {};
   }
   function renderClock() {
-    $('dayNum').textContent = fmt(S.day);
-    $('estNum').textContent = S.estimate ? fmt(S.estimate) : '―';
-    const max = Math.max(S.day, S.estimate || 1, IDEAL) * 1.1;
+    $('dayNum').textContent = both(S.day);
+    const target = S.promise != null ? S.promise : (S.estimate ? S.estimate * 8 : null);
+    $('estLabel').textContent = S.promise != null ? '約束した日数' : 'あなたの予想';
+    $('estNum').textContent = target != null ? fmtD(target) : '―';
+    const max = Math.max(S.day, target || 8, IDEAL) * 1.1;
     const f = $('barFill'); f.style.width = (S.day / max * 100) + '%';
-    f.classList.toggle('over', !!S.estimate && S.day > S.estimate);
-    const m = $('barMark'); m.hidden = !S.estimate; if (S.estimate) m.style.left = (S.estimate / max * 100) + '%';
+    f.classList.toggle('over', target != null && S.day > target);
+    const m = $('barMark'); m.hidden = target == null; if (target != null) m.style.left = (target / max * 100) + '%';
   }
   function renderBoard() {
     const cols = [['todo', 'やること'], ['doing', '作業中'], ['done', '完了']];
@@ -560,7 +792,7 @@ ul.qs { margin: 0; padding-left: 1.2em; }
         const clickable = k === 'todo' && S.scene === 'board';
         const tag = clickable ? 'button type="button"' : 'div';
         const end = clickable ? 'button' : 'div';
-        return `<${tag} class="kcard ${c.rework ? 'rework' : ''} ${S.fresh[c.id] ? 'new' : ''}" data-id="${c.id}"><span class="no">#${issueNo(c.id)} ${d.no}</span>${esc(d.title)}${c.days ? `<span class="days">${fmt(c.days)}</span>` : ''}</${end}>`;
+        return `<${tag} class="kcard ${c.rework ? 'rework' : ''} ${S.fresh[c.id] ? 'new' : ''}" data-id="${c.id}"><span class="no">#${issueNo(c.id)} ${d.no}</span>${esc(d.title)}${c.days ? `<span class="days">${fmtH(c.days)}</span>` : ''}</${end}>`;
       }).join('');
       return `<div class="col"><h3><span>${name}</span><span>${list.length}</span></h3>${items}</div>`;
     }).join('');
@@ -573,6 +805,7 @@ ul.qs { margin: 0; padding-left: 1.2em; }
   function renderGit() {
     $('gitState').innerHTML = S.dirty ? '<span class="dirty">保存していない変更あり</span>' : (S.commits.length ? '<span class="clean">保存済み</span>' : '<span class="clean" style="color:var(--muted)">まだ何も作っていない</span>');
     $('commitBtn').disabled = !S.dirty;
+    $('codeSize').textContent = lines(S.code);
     $('gitLog').innerHTML = S.commits.length
       ? S.commits.slice().reverse().map((c) => `<div class="${c.branch ? 'branch' : ''}"><span class="dot"></span><span class="${c.gone ? 'gone' : ''}">${esc(c.label)}${c.branch ? '（branch・捨てた）' : ''}</span></div>`).join('')
       : '<div class="empty">保存した版はまだない</div>';
@@ -585,23 +818,22 @@ ul.qs { margin: 0; padding-left: 1.2em; }
     S.dirty = false; renderGit();
   });
   function renderForm() {
-    const d = S.design, done = (id) => card(id) && card(id).col === 'done';
-    const built = done('v1');
-    if (!built) { $('form').innerHTML = '<div class="none" style="color:var(--muted)">まだ作っていない</div>'; return; }
-    const id = d.q1 === 'b' || done('c1');
-    const cancel = d.q2 === 'b' || done('c2');
-    const len = done('c3');
-    const tz = done('c4');
-    const tzRec = d.q3 === 'b' || done('c4');
+    const d = S.design, p = S.prep, done = (id) => card(id) && card(id).col === 'done';
+    if (!done('v1')) { $('form').innerHTML = '<div style="color:var(--muted)">まだ作っていない</div>'; return; }
     const f = (label, box, tag) => `<div class="f"><span>${label}</span><span class="box">${box}${tag ? ` <span class="tag">${tag}</span>` : ''}</span></div>`;
     $('form').innerHTML = [
-      id ? f('申込番号', 'A-0042', '自動') : '',
-      f('名前', '田中 誠', len ? '10文字まで' : ''),
+      d.q1 === 'b' || done('c1') ? f('申込番号', 'A-0042', '自動') : '',
+      f('名前', '田中 誠', done('c3') ? '10文字まで' : ''),
       f('メール', 'tanaka@example.com'),
-      f('申込時刻', tzRec ? '10/20 14:05 日本時間' : '10/20 14:05'),
-      tz ? f('締切', '10/31 23:59 日本時間') : '',
-      cancel ? f('取り消し', '[ 取り消す ]') : '',
-      done('c5') ? f('本人確認', '当日、受付で社員証を見る') : ''
+      done('c7') ? f('名簿から', '[ 社員名簿から入力 ]') : (p.api ? f('名簿から', '（つなぐ入口だけある）') : ''),
+      f('申込時刻', d.q3 === 'b' || done('c4') ? '10/20 14:05 日本時間' : '10/20 14:05'),
+      done('c4') ? f('締切', '10/31 23:59 日本時間') : '',
+      d.q2 === 'b' || done('c2') ? f('取り消し', '[ 取り消す ]') : '',
+      done('c5') ? f('本人確認', '当日、受付で社員証を見る') : '',
+      p.csv || done('c8') ? f('一覧', '[ CSVで書き出す ]') : '',
+      p.log || done('c6') ? f('管理者画面', 'ログイン ／ ログ一覧') : '',
+      p.app ? f('アプリ', 'iPhone ／ Android') : '',
+      p.en ? f('言語', '日本語 ／ English') : ''
     ].join('');
   }
 
