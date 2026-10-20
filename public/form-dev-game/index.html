@@ -200,6 +200,12 @@ td.mark.o { color: var(--good); }
 td.mark.x { color: var(--muted); }
 .code-size { font-size: 12px; color: var(--muted); }
 .code-size b { font-family: var(--f-display); font-weight: 400; color: var(--ink); font-size: 14px; }
+/* セーブ */
+.save { display: grid; gap: 10px; }
+.save textarea { width: 100%; font-family: var(--f-mono); font-size: 11px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; resize: vertical; }
+.save-msg { margin: 0; font-size: 13px; min-height: 1.4em; color: var(--muted); }
+.save-msg.ok { color: var(--good); }
+.save-msg.err { color: var(--bad); }
 </style>
 </head>
 <body>
@@ -235,6 +241,20 @@ td.mark.x { color: var(--muted); }
         <p class="label">いま作っているフォーム</p>
         <div class="form" id="form"></div>
       </section>
+      <section class="panel save">
+        <p class="label">セーブ（続きから遊ぶ）</p>
+        <div class="row">
+          <button class="btn" id="saveFileBtn" type="button">ファイルに保存</button>
+          <button class="btn ghost" id="loadFileBtn" type="button">ファイルから読み込む</button>
+          <input type="file" id="loadFile" accept="application/json,.json" hidden>
+        </div>
+        <div class="row">
+          <button class="btn ghost" id="copyJsonBtn" type="button">JSONをコピー</button>
+          <button class="btn ghost" id="pasteJsonBtn" type="button">貼り付けたJSONで再開</button>
+        </div>
+        <textarea id="saveText" rows="3" placeholder="ここにセーブデータのJSONを貼り付ける" aria-label="セーブデータのJSON"></textarea>
+        <p class="save-msg" id="saveMsg" aria-live="polite"></p>
+      </section>
     </aside>
   </div>
 </div>
@@ -262,11 +282,7 @@ td.mark.x { color: var(--muted); }
     { key: 'q2', q: '申込の取り消しは考える？',
       a: { t: '考えない', d: '取り消しの話は出ていないので作らない。', h: 0, lines: 0 },
       b: { t: '「取り消し済み」の印を付けられるようにする', d: '消さずに印を付けて、誰が取り消したか残す。', h: 3, lines: 80 },
-      hint: '人事から「毎回、取り消しの連絡が何件も来る」と聞いた。' },
-    { key: 'q3', q: '申し込んだ時刻は、どう記録する？',
-      a: { t: 'サーバーの時刻だけ記録する', d: '日本のサーバーの時計で記録する。', h: 0, lines: 0 },
-      b: { t: 'どの国の時刻かも一緒に記録する', d: '日本時間か現地時間かが後から分かる。', h: 1.5, lines: 40 },
-      hint: '海外支社からも参加者がいると聞いた。' }
+      hint: '人事から「毎回、取り消しの連絡が何件も来る」と聞いた。' }
   ];
 
   const PREP = [
@@ -274,8 +290,6 @@ td.mark.x { color: var(--muted); }
       hint: '情報システム部「社内のシステムは、問い合わせに答えられるようにログを残すルールだよ」' },
     { key: 'api', t: '外から名前とメールを受け取れる入口', d: 'ほかのシステムから申込データを入れられるように、入口を分けておく。', h: 6, lines: 200, card: 'c7',
       hint: '総務「いずれ社員名簿システムから自動で入ったら楽だね」' },
-    { key: 'csv', t: '参加者一覧をCSVで書き出すボタン', d: 'Excel で開ける形で、申込者の一覧を書き出す。', h: 2.5, lines: 80, card: 'c8',
-      hint: '人事「当日の受付は紙の名簿でやるつもり」' },
     { key: 'app', t: 'スマホアプリ版', d: 'iPhone と Android のアプリも作っておく。', h: 24, lines: 1200, card: null,
       hint: 'みんな会社のPCから申し込む。アプリの話は誰からも出なかった。' },
     { key: 'en', t: '英語の画面', d: '画面の文言を英語に切り替えられるようにする。', h: 10, lines: 300, card: null,
@@ -299,53 +313,49 @@ td.mark.x { color: var(--muted); }
       good: { text: '印を付ける場所は最初からある。取り消しボタンを付けるだけで済む。', touch: 'small', lines: 60,
         steps: [['取り消しボタンを付ける', 2]] },
       ask: '申込を取り消すことはありますか？' },
-    c3: { no: '③', title: '名前は10文字まで', from: 'PM',
-      say: '名札に印刷するから、名前は10文字までにして。',
-      task: { text: '数えるだけのつもりだった。でも「𠮷」のような字や絵文字は、見た目は1文字でも、コンピュータの数え方では2文字以上になる。話を聞いても、ここまでは予想できない。', touch: 'small', lines: 50,
-        steps: [['文字の数え方を調べて決める', 2], ['入力のチェックを直す', 2], ['名札に印刷して試す', 1]] },
+    // ③は話を聞いても準備しても必ず来る。作って使われて初めて、作りの順番が違ったと分かる
+    c3: { no: '③', title: '確定メールが届いてはいけない人に届いた', from: '人事',
+      say: '同じ人に確定メールが2通届いたり、社外のアドレスにも届いたりしているよ。人数の集計も合わない。',
+      text: '今の作りは、入力されたらすぐ保存して確定メールを送る。受け付けてよい申込かを確かめる段がない。作る前には、誰も気づかなかった。',
+      patch: { touch: 'small', lines: 80,
+        steps: [['同じ人の2回目の申込を弾く処理を足す', 2], ['社外のアドレスを弾く処理を足す', 1.5]] },
+      rebuild: { touch: 'rework', lines: 150,
+        steps: [['保存とメールの前に、受け付けてよいかを確かめる段を作る', 3], ['全部の申込がその段を通るように、順番を入れ替える', 2]] },
       ask: null },
-    c4: { no: '④', title: '締切は10/31 23:59', from: '海外支社', dep: 'q3',
-      say: 'シンガポール支社からも参加するよ。締切は10/31の23:59だよね？',
-      bad: { text: '記録していたのは日本のサーバーの時刻だけ。シンガポールの23:59は、日本の0:59になる。', touch: 'rework', lines: 100,
-        steps: [['時刻の記録の仕方を直す', 3], ['今までの記録を日本時間に直す', 2], ['締切の判定を足す', 1.5]],
-        ext: ['どの国の時刻で締めるか、海外支社に確認する', 1, 4] },
-      good: { text: 'どの国の時刻かも記録していたので、締切の判定を足すだけで済む。', touch: 'small', lines: 40,
-        steps: [['締切の判定を足す', 1.5]] },
-      ask: '海外から申し込む人はいますか？' },
-    c5: { no: '⑤', title: '顔写真で本人確認', from: 'PM',
+    // ③の続き。good は③を作り直したとき、bad は継ぎ足したとき
+    c3b: { no: '③の続き', title: '別の申込にも確定メールが出た', from: '人事',
+      say: '締切を過ぎてからの申込や、テストで入れた申込にも、確定メールが出てたよ。',
+      bad: { text: '継ぎ足した処理とは別の穴だった。また別の場所に継ぎ足した。', touch: 'small', lines: 100,
+        steps: [['締切を過ぎた申込を弾く処理を足す', 2], ['テストの申込を弾く処理を足す', 2], ['前に継ぎ足した処理とぶつからないか確かめる', 2]] },
+      good: { text: '確かめる段はもうある。そこに決まりを2つ足すだけで済んだ。', touch: 'none', lines: 20,
+        steps: [['確かめる段に、決まりを2つ足す', 1]] } },
+    c5: { no: '④', title: '顔写真で本人確認', from: 'PM',
       say: '受付を楽にしたいから、顔写真で本人か確認できるようにして。名前の欄と同じくらいでできるでしょ？',
       main: { steps: [['顔写真で見分ける方法を調べる', 4], ['フォームに組み込んでみる', 16], ['社員の写真で試す', 4]], ext: ['顔認証サービスの試用を申し込む', 2, 6], lines: 500 },
       branch: { steps: [['顔写真で見分ける方法を調べる', 4], ['別の場所で小さく試す', 8], ['結果をまとめる', 2]], ext: ['顔認証サービスの試用を申し込む', 2, 6] },
       ask: '当日の本人確認はどうしますか？' },
-    c6: { no: '⑥', title: '申込が届いていない？', from: '人事', prep: 'log',
+    c6: { no: '⑤', title: '申込が届いていない？', from: '人事', prep: 'log',
       say: '「申し込んだのに確認できない」って人がいるよ。ログはどう管理してるの？',
       bad: { text: 'ログを残していなかった。この人の原因は、もう調べられない。全部の処理にログを足すので、今あるコード全体に手が入る。', touch: 'rework', lines: 400,
         steps: [['管理者ログインを作る', 4], ['全部の処理にログを記録する仕組みを足す', 4], ['ログを見る画面を作る', 3], ['問い合わせた人に謝って、再登録してもらう', 1]] },
       good: { text: '管理者画面でログを見たら、メールアドレスの打ち間違いだと分かった。', touch: 'none', lines: 0,
         steps: [['ログを見て原因を調べる', 1], ['その人に連絡する', 0.5]] },
       ask: '問い合わせがあったとき、何を調べられるようにしますか？' },
-    c7: { no: '⑦', title: '社員名簿から読み込みたい', from: '総務', prep: 'api',
+    c7: { no: '⑥', title: '社員名簿から読み込みたい', from: '総務', prep: 'api',
       say: '来年は社員名簿システムから名前とメールを読み込んで、入力の手間をなくしたいな。',
       bad: { text: '名前とメールの入力が、画面に直接くっついた作りになっている。入力と保存を切り離すところから作り直す。', touch: 'rework', lines: 350,
         steps: [['入力と保存の処理を切り離す', 6], ['外から受け取る入口を作る', 4], ['画面をつなぎ直す', 3], ['名簿システムとつなぐ', 4]], ext: NAME_EXT },
       good: { text: '受け取る入口を作っておいたので、名簿システムとつなぐだけで済む。ただし相手のシステムの確認は、準備していても省けない。', touch: 'small', lines: 150,
         steps: [['名簿システムとつなぐ', 4]], ext: NAME_EXT },
-      ask: 'ほかのシステムとつなぐ予定はありますか？' },
-    c8: { no: '⑧', title: '参加者一覧を印刷したい', from: '人事', prep: 'csv',
-      say: '当日の受付用に、参加者の一覧を紙で印刷したいんだけど。',
-      bad: { text: '一覧を取り出す方法がない。書き出す機能を足す。', touch: 'small', lines: 80, addOnly: true,
-        steps: [['一覧を書き出す機能を足す', 3]] },
-      good: { text: 'CSVで書き出すボタンを用意してあった。押して Excel で印刷するだけ。', touch: 'none', lines: 0,
-        steps: [['書き出して印刷する', 0.5]] },
-      ask: '集まったデータは、どう使いますか？' }
+      ask: 'ほかのシステムとつなぐ予定はありますか？' }
   };
 
-  // 一番うまくいったときの時間（話を聞く・番号/印/時刻を記録・当たる準備だけする・毎回確認する）
+  // 一番うまくいったときの時間（話を聞く・番号/印を記録・当たる準備だけする・③は作り直す・毎回確認する）
   const IDEAL = (() => {
-    let h = HEAR_H + DESIGN.reduce((s, q) => s + q.b.h, 0) + 18.5 + BUILD.h;
-    let code = BUILD.lines + DESIGN.reduce((s, q) => s + q.b.lines, 0) + 680;
-    ['c1', 'c2', 'c3', 'c4', 'c6', 'c8', 'c7'].forEach((id) => {
-      const t = CARDS[id].task || CARDS[id].good;
+    const hit = PREP.filter((p) => p.card);
+    let h = HEAR_H + DESIGN.reduce((s, q) => s + q.b.h, 0) + hit.reduce((s, p) => s + p.h, 0) + BUILD.h;
+    let code = BUILD.lines + DESIGN.reduce((s, q) => s + q.b.lines, 0) + hit.reduce((s, p) => s + p.lines, 0);
+    [CARDS.c1.good, CARDS.c2.good, CARDS.c3.rebuild, CARDS.c3b.good, CARDS.c6.good, CARDS.c7.good].forEach((t) => {
       h += stepsH(t) + checkH(t.touch, code) + (t.ext ? (t.ext[1] + t.ext[2]) / 2 : 0);
       code += t.lines;
     });
@@ -357,7 +367,7 @@ td.mark.x { color: var(--muted); }
     scene: 'intro', estimate: null, day: 0, heard: false, design: {}, dIdx: 0, prep: {}, promise: null, promiseDraft: 0,
     cards: [{ id: 'v1', col: 'todo', days: 0, rework: false, note: true }],
     commits: [], dirty: false, current: null, resolved: 0, code: 0,
-    noteChecked: false, c5way: null, reverted: 0, manualFix: 0, reviewCost: 0, missing: 0, deliver: 0,
+    noteChecked: false, c3way: null, c5way: null, reverted: 0, manualFix: 0, reviewCost: 0, missing: 0, deliver: 0,
     checkTotal: 0, skips: 0, bugs: 0, pendingBreak: null, lastMsg: '', boardMsg: '', fresh: {}
   });
   let S = (window.claude && window.claude.hot && window.claude.hot.data && window.claude.hot.data.S) || fresh();
@@ -432,7 +442,7 @@ td.mark.x { color: var(--muted); }
     design() {
       const q = DESIGN[S.dIdx];
       return {
-        html: `<h2 class="scene-title">作り方を決める（${S.dIdx + 1}/3）</h2>
+        html: `<h2 class="scene-title">作り方を決める（${S.dIdx + 1}/${DESIGN.length}）</h2>
           ${say('あなた', q.q, 'dev')}
           <div class="choices">
             ${choice(0, q.a.t, q.a.d, q.a.h)}
@@ -452,7 +462,7 @@ td.mark.x { color: var(--muted); }
       return {
         html: `<h2 class="scene-title">先回りして準備する？</h2>
           ${say('あなた', 'まだ誰にも頼まれていないけど、<strong>後から聞かれそうなこと</strong>を先に作っておくこともできる。', 'dev')}
-          <p class="tool-tip"><b>予想のコツ。</b>社内のシステムで後から聞かれやすいのは「何か起きたら調べられる？」「ほかのシステムとつなげる？」「データを取り出せる？」の3つ。${S.heard ? '' : '話を聞いていないので、どれが当たるかは予想するしかない。'}ただし、使われない準備は時間のむだになり、コードも増える。</p>
+          <p class="tool-tip"><b>予想のコツ。</b>社内のシステムで後から聞かれやすいのは「何か起きたら調べられる？」「ほかのシステムとつなげる？」の2つ。${S.heard ? '' : '話を聞いていないので、どれが当たるかは予想するしかない。'}ただし、使われない準備は時間のむだになり、コードも増える。</p>
           <div class="choices">${items}</div>
           <div class="total"><span>選んだ準備の合計</span><b id="prepTotal">0時間</b></div>
           <div class="choices">${choice(0, 'この準備で進める')}</div>`,
@@ -504,25 +514,15 @@ td.mark.x { color: var(--muted); }
         html: `<h2 class="scene-title">初版を作る</h2>
           ${more ? say('PM', `えっ、最初は${S.estimate}日って言ってたよね？……でも、後から来そうな話を聞いて納得した。<strong>${fmtD(S.promise)}</strong>でいこう。`)
                  : say('PM', `了解、<strong>${fmtD(S.promise)}</strong>ね！`)}
-          <div class="choices">${choice(0, '初版を作る', '名前とメールを入れて保存できるフォーム。準備したものも一緒に作る。', BUILD.h)}</div>`,
+          <div class="choices">${choice(0, '初版を作って公開する', '名前とメールを入れて保存し、確定メールを送るフォーム。準備したものも一緒に作る。', BUILD.h)}</div>`,
         on() {
           addDays(BUILD.h);
           S.code += BUILD.lines + DESIGN.reduce((s, q) => s + (S.design[q.key] === 'b' ? q.b.lines : 0), 0) + PREP.reduce((s, p) => s + (S.prep[p.key] ? p.lines : 0), 0);
           const v = card('v1'); v.col = 'done'; v.days = S.day;
-          S.dirty = true; S.scene = 'built';
-        }
-      };
-    },
-    built() {
-      return {
-        html: `<h2 class="scene-title">初版ができた</h2>
-          ${say('PM', `おお、できたね！ここまで ${fmtD(S.day)}。さっそく公開しよう。`)}
-          <p class="tool-tip"><b>Git の出番。</b>右の「今の状態を保存する」を押すと、この動く版をあとで呼び戻せるようになる。押すかどうかは自由。</p>
-          <div class="choices">${choice(0, '公開する', '社内のみんなに使ってもらう。')}</div>`,
-        on() {
-          S.scene = 'board';
+          S.dirty = true; S.scene = 'board';
           addCard('c1'); addCard('c2');
-          S.boardMsg = say('PM', '使った人から要望が<strong>2つ</strong>届いたよ。Kanban の「やること」に貼っておいた。');
+          S.boardMsg = say('PM', `初版ができて公開したよ。ここまで ${fmtD(S.day)}。使った人から要望が<strong>2つ</strong>届いたので、Kanban の「やること」に貼っておいた。`)
+            + '<p class="tool-tip"><b>Git の出番。</b>右の「今の状態を保存する」を押すと、この動く版をあとで呼び戻せるようになる。押すかどうかは自由。</p>';
         }
       };
     },
@@ -533,17 +533,13 @@ td.mark.x { color: var(--muted); }
           ${S.boardMsg || ''}
           <p class="tool-tip"><b>Kanban の出番。</b>要望は1枚ずつカードになって「やること」に並ぶ。PMは板を見れば、何が待っていて、何にどれだけ時間がかかったかが分かる。</p>
           <div class="choices">${todo.map((c, i) => choice(i, `${CARDS[c.id].no} ${CARDS[c.id].title}`, `${CARDS[c.id].from}より`)).join('')}</div>`,
-        on(i) { const c = todo[i]; c.col = 'doing'; S.current = c.id; S.noteChecked = false; S.scene = c.id === 'c5' ? 'c5' : 'card'; }
+        on(i) { const c = todo[i]; c.col = 'doing'; S.current = c.id; S.noteChecked = false; S.scene = ['c3', 'c5'].includes(c.id) ? c.id : 'card'; }
       };
     },
     card() {
       const def = CARDS[S.current];
-      let t, rework = false;
-      if (def.task) t = def.task;
-      else {
-        const good = def.dep ? S.design[def.dep] === 'b' : !!S.prep[def.prep];
-        t = good ? def.good : def.bad; rework = !good && !t.addOnly;
-      }
+      const good = def.dep ? S.design[def.dep] === 'b' : !!S.prep[def.prep];
+      const t = good ? def.good : def.bad, rework = !good;
       const base = stepsH(t), check = checkH(t.touch, S.code), p = bugRate(t.touch, S.code);
       const opts = check > 0
         ? choice(0, rework ? '影響を確かめてから作り直す' : '影響を確かめてから直す', '今あるコードを一通り確かめる。', rangeLabel(base + check, t.ext))
@@ -596,10 +592,37 @@ td.mark.x { color: var(--muted); }
         }
       };
     },
+    c3() {
+      const def = CARDS.c3;
+      const ways = [def.patch, def.rebuild].map((t) => ({ t, check: checkH(t.touch, S.code) }));
+      const total = (w) => stepsH(w.t) + w.check;
+      return {
+        html: `<h2 class="scene-title">${def.no} ${esc(def.title)}</h2>
+          ${say(def.from, esc(def.say))}
+          <div class="result-box bad">${esc(def.text)}</div>
+          <p class="tool-tip">話を聞いても、先回りして準備しても防げなかった。作って使われて初めて、作りの順番が違っていたと分かることがある。</p>
+          ${noteBox()}
+          <div class="choices">
+            ${choice(0, '継ぎ足しで直す', '起きた問題ごとに、弾く処理を足す。今は短く済む。', total(ways[0]))}
+            ${choice(1, '順番から作り直す', '保存とメールの前に「受け付けてよいか」を確かめる段を1つ作り、全部の申込を通す。', total(ways[1]))}
+          </div>
+          <p class="label" style="margin:0">継ぎ足す場合の内訳</p>
+          ${breakdown(ways[0].t, ways[0].check)}
+          <p class="label" style="margin:0">作り直す場合の内訳</p>
+          ${breakdown(ways[1].t, ways[1].check)}`,
+        on(i) {
+          const w = ways[i], c = card('c3'), h = total(w);
+          S.c3way = i === 0 ? 'patch' : 'rebuild';
+          c.days += h; c.rework = i === 1; c.note = S.noteChecked; addDays(h);
+          S.checkTotal += w.check; S.code += w.t.lines; S.dirty = true;
+          finishCard();
+        }
+      };
+    },
     c5() {
       const def = CARDS.c5;
       return {
-        html: `<h2 class="scene-title">⑤ 顔写真で本人確認</h2>
+        html: `<h2 class="scene-title">${def.no} ${esc(def.title)}</h2>
           ${say('PM', esc(def.say))}
           ${say('あなた', '……これは、そもそも<strong>できるかどうか分からない</strong>。', 'dev')}
           <p class="tool-tip"><b>Git の branch の出番。</b>本体とは別の作業場所を作れば、試して失敗しても捨てるだけで済む。</p>
@@ -616,7 +639,7 @@ td.mark.x { color: var(--muted); }
           const h = stepsH(t) + rollExt(t.ext);
           addDays(h); c.days += h;
           if (i === 0) { S.c5way = 'main'; c.rework = true; S.code += def.main.lines; S.dirty = true; S.scene = 'c5main'; }
-          else { S.c5way = 'branch'; S.commits.push({ label: '⑤ 顔写真を試す', branch: true, gone: true }); S.scene = 'c5end'; }
+          else { S.c5way = 'branch'; S.commits.push({ label: `${def.no} 顔写真を試す`, branch: true, gone: true }); S.scene = 'c5end'; }
         }
       };
     },
@@ -654,7 +677,7 @@ td.mark.x { color: var(--muted); }
       const missing = S.cards.filter((c) => c.id !== 'v1' && !c.note);
       return {
         html: `<h2 class="scene-title">3か月後</h2>
-          ${say('PM', '新しく来た人が聞いてるよ。「なんで申込に番号を振ってるの？取り消しはなんで消さずに印なの？締切は何時基準？」')}
+          ${say('PM', '新しく来た人が聞いてるよ。「なんで申込に番号を振ってるの？取り消しはなんで消さずに印なの？確定メールの前に何を確かめてるの？」')}
           ${missing.length === 0
             ? `<div class="result-box good"><strong>全部、プルリクエストに理由を書いてあった。</strong>リンクを渡すだけで答えられる。</div>`
             : `<div class="result-box bad">理由を書いていなかった変更が <strong>${missing.length}件</strong> ある。${missing.map((c) => CARDS[c.id].no).join('')} について、当時のチャットや記憶をたどって調べ直す（1件2時間）。</div>`}
@@ -683,18 +706,22 @@ td.mark.x { color: var(--muted); }
       }).join('');
       const hits = PREP.filter((p) => S.prep[p.key] && p.card).length;
       const misses = PREP.filter((p) => S.prep[p.key] && !p.card).length;
-      const reworks = S.cards.filter((c) => c.rework && c.id !== 'c5');
+      const reworks = S.cards.filter((c) => c.rework && !['c3', 'c5'].includes(c.id));
+      const c3h = card('c3').days + card('c3b').days;
       const asks = Object.values(CARDS).filter((d) => d.ask).map((d) => `<li>${esc(d.ask)}</li>`).join('');
       const lessons = [
         ['できるか分からないものがある', S.c5way === 'heard'
           ? '話を聞いた段階で、顔写真の確認は難しそうだと分かった。社員証を見る運用に決まったので、試す時間もかからなかった。'
-          : `⑤は作ってみるまで、できるかどうか分からなかった。${S.c5way === 'branch' ? '別の作業場所で試したので、本体は無事だった。' : '本体で試したので、戻すのにも時間がかかった。'}`],
+          : `${CARDS.c5.no}は作ってみるまで、できるかどうか分からなかった。${S.c5way === 'branch' ? '別の作業場所で試したので、本体は無事だった。' : '本体で試したので、戻すのにも時間がかかった。'}`],
         ['なんとなく作ると、後で時間がかかる', reworks.length
           ? `${reworks.map((c) => CARDS[c.id].no).join('')}は作り直しになった。作る前に聞いて決めていれば、どれも短く済んだ。`
           : '作り直しは1つもなかった。作る前に決めておいたおかげ。'],
+        ['作って使われて初めて、作りの順番が違ったと分かる', S.c3way === 'rebuild'
+          ? `③は順番から作り直した。続きの問題が来たときは、確かめる段に決まりを足すだけで済んだ。③と続きで合計 ${fmtH(c3h)}。`
+          : `③は継ぎ足しで直した。続きの問題が来て、また別の場所に継ぎ足した。③と続きで合計 ${fmtH(c3h)}。`],
         ['コードが増えるほど、直すのが重くなる', `最後はコードが ${lines(S.code)} になった。${S.checkTotal ? `影響を確かめるだけで合計 ${fmtH(S.checkTotal)} かかった。` : '影響は一度も確かめなかった。'}${S.skips ? `確かめずに直したのは${S.skips}回で、そのうち${S.bugs}回は不具合が出た。` : ''}${S.prep.app || S.prep.en ? '使われなかった準備のコードも、確かめる量を増やした。' : ''}`],
-        ['先回りは、当たれば得で、外れれば損', `${hits + misses ? `準備が当たったのは${hits}個、外れたのは${misses}個。` : `先回りの準備はしなかった。⑥⑦⑧は後から作って、合計 ${fmtH(['c6', 'c7', 'c8'].reduce((s, id) => s + card(id).days, 0))} かかった。`}外部システムの確認のように、準備しても省けない時間もある。`],
-        ['大企業が、決めるのに時間をかける理由', `${S.heard ? '最初に話を聞いたので、何を準備すればいいかが分かった。' : '話を聞かなかったので、何を準備するかは勘で選ぶしかなかった。'}③のように、聞いても分からないことは残る。`],
+        ['先回りは、当たれば得で、外れれば損', `${hits + misses ? `準備が当たったのは${hits}個、外れたのは${misses}個。` : `先回りの準備はしなかった。${CARDS.c6.no}${CARDS.c7.no}は後から作って、合計 ${fmtH(['c6', 'c7'].reduce((s, id) => s + card(id).days, 0))} かかった。`}外部システムの確認のように、準備しても省けない時間もある。`],
+        ['大企業が、決めるのに時間をかける理由', `${S.heard ? '最初に話を聞いたので、何を準備すればいいかが分かった。' : '話を聞かなかったので、何を準備するかは勘で選ぶしかなかった。'}③のように、聞いても使われるまで分からないことは残る。`],
         ['Kanban・Git・GitHub が要る理由', ['Kanban の板には、どのカードに何時間かかったかが残った。',
           S.reverted ? `Git で保存した版に ${S.reverted}回 戻せた。` : (S.manualFix ? `保存した版がなかったので、${S.manualFix}回 手で原因を探した。` : ''),
           S.reviewCost ? `理由を書かなかった変更を、3か月後に調べ直した（${fmtH(S.reviewCost)}）。` : 'プルリクエストに理由を書いたので、3か月後の質問にすぐ答えられた。'].join('')]
@@ -726,6 +753,18 @@ td.mark.x { color: var(--muted); }
     }
   };
 
+  // 締切が近づくと③の続きが来る。手を動かす場面は作らず、かかった時間だけ足す
+  function nearDeadline() {
+    const def = CARDS.c3b, t = S.c3way === 'rebuild' ? def.good : def.bad;
+    const h = stepsH(t) + checkH(t.touch, S.code);
+    addCard('c3b', { col: 'done', days: h, note: true });
+    addDays(h); S.checkTotal += checkH(t.touch, S.code); S.code += t.lines; S.dirty = true;
+    addCard('c6');
+    return say(def.from, esc(def.say))
+      + `<div class="result-box ${S.c3way === 'rebuild' ? 'good' : 'bad'}">${esc(t.text)}（${fmtH(h)}）</div>`
+      + say('PM', `イベントが近づいてきた。<strong>${CARDS.c6.no}</strong>も来てるよ。`);
+  }
+
   function finishCard() {
     const c = card(S.current);
     c.col = 'done'; S.current = null; S.resolved++;
@@ -733,23 +772,21 @@ td.mark.x { color: var(--muted); }
     S.lastMsg = '';
     if (S.resolved === 1) {
       addCard('c3');
-      msg += say('PM', 'ごめん、もう1つ要望！<strong>③</strong>を貼っておいたよ。');
+      msg += say('人事', '困ったことが起きてる！<strong>③</strong>を貼っておいたよ。');
     } else if (S.resolved === 3) {
-      addCard('c4');
       if (S.heard) {
         addCard('c5', { col: 'done', note: true });
         S.c5way = 'heard'; S.resolved++;
-        msg += say('海外支社', '<strong>④</strong>を貼ったよ。') + say('PM', '⑤の顔写真の件は、最初に話を聞いたときに難しそうと分かったから、受付で社員証を見ることにしてあるよ。');
+        msg += say('PM', `${CARDS.c5.no}の顔写真の件は、最初に話を聞いたときに難しそうと分かったから、受付で社員証を見ることにしてあるよ。`) + nearDeadline();
       } else {
         addCard('c5');
-        msg += say('PM', 'あと2つ！<strong>④⑤</strong>を貼っておいたよ。');
+        msg += say('PM', `もう1つ要望！<strong>${CARDS.c5.no}</strong>を貼っておいたよ。`);
       }
+    } else if (S.resolved === 4) {
+      msg += nearDeadline();
     } else if (S.resolved === 5) {
-      addCard('c6'); addCard('c8');
-      msg += say('PM', 'イベントが近づいてきた。<strong>⑥⑧</strong>が来てるよ。');
-    } else if (S.resolved === 7) {
       addCard('c7');
-      msg += say('総務', 'イベントは無事に終わった！来年に向けて<strong>⑦</strong>をお願い。');
+      msg += say('総務', `イベントは無事に終わった！来年に向けて<strong>${CARDS.c7.no}</strong>をお願い。`);
     }
     S.boardMsg = msg;
     const left = S.cards.filter((x) => x.col !== 'done').length;
@@ -823,19 +860,67 @@ td.mark.x { color: var(--muted); }
     const f = (label, box, tag) => `<div class="f"><span>${label}</span><span class="box">${box}${tag ? ` <span class="tag">${tag}</span>` : ''}</span></div>`;
     $('form').innerHTML = [
       d.q1 === 'b' || done('c1') ? f('申込番号', 'A-0042', '自動') : '',
-      f('名前', '田中 誠', done('c3') ? '10文字まで' : ''),
+      f('名前', '田中 誠'),
       f('メール', 'tanaka@example.com'),
       done('c7') ? f('名簿から', '[ 社員名簿から入力 ]') : (p.api ? f('名簿から', '（つなぐ入口だけある）') : ''),
-      f('申込時刻', d.q3 === 'b' || done('c4') ? '10/20 14:05 日本時間' : '10/20 14:05'),
-      done('c4') ? f('締切', '10/31 23:59 日本時間') : '',
+      f('確定メール', S.c3way === 'rebuild' ? '受け付けてよいかを確かめてから送る' : '申し込むとすぐ送る', { patch: '継ぎ足しあり', rebuild: '作り直した' }[S.c3way]),
       d.q2 === 'b' || done('c2') ? f('取り消し', '[ 取り消す ]') : '',
       done('c5') ? f('本人確認', '当日、受付で社員証を見る') : '',
-      p.csv || done('c8') ? f('一覧', '[ CSVで書き出す ]') : '',
       p.log || done('c6') ? f('管理者画面', 'ログイン ／ ログ一覧') : '',
       p.app ? f('アプリ', 'iPhone ／ Android') : '',
       p.en ? f('言語', '日本語 ／ English') : ''
     ].join('');
   }
+
+  // ===== セーブ（JSONで保存・読み込み） =====
+  const SAVE_ID = 'form-dev-game';
+  const SAVE_VER = 2;   // カードの並びを変えたら上げる
+  const saveJson = () => JSON.stringify({ game: SAVE_ID, version: SAVE_VER, savedAt: new Date().toISOString(), state: S });
+  function saveMsg(text, kind) { const m = $('saveMsg'); m.textContent = text; m.className = 'save-msg ' + (kind || ''); }
+  function loadJson(text) {
+    let data;
+    try { data = JSON.parse(text); } catch (e) { saveMsg('JSONとして読めなかった。コピーし損ねていないか確かめてね。', 'err'); return; }
+    if (!data || data.game !== SAVE_ID || !data.state || !SCENES[data.state.scene]) { saveMsg('このゲームのセーブデータではないみたい。', 'err'); return; }
+    if (data.version !== SAVE_VER) { saveMsg('ゲームの中身が変わる前のセーブデータなので、読み込めない。', 'err'); return; }
+    S = Object.assign(fresh(), data.state, { fresh: {} });
+    render();
+    const at = data.savedAt ? new Date(data.savedAt).toLocaleString('ja-JP') : '';
+    saveMsg(`${at ? at + ' の' : ''}セーブデータから再開した。`, 'ok');
+    $('story').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  $('saveFileBtn').addEventListener('click', () => {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, '0');
+    const name = `form-dev-game-save-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
+    const url = URL.createObjectURL(new Blob([saveJson()], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    saveMsg(`「${name}」に保存した。`, 'ok');
+  });
+  $('loadFileBtn').addEventListener('click', () => $('loadFile').click());
+  $('loadFile').addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => loadJson(String(reader.result));
+    reader.onerror = () => saveMsg('ファイルを読めなかった。', 'err');
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+  $('copyJsonBtn').addEventListener('click', () => {
+    const t = $('saveText');
+    t.value = saveJson();
+    const fallback = () => { t.focus(); t.select(); saveMsg('下の欄に出した。選択されているので、そのままコピーしてね。'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t.value).then(() => saveMsg('コピーした。下の欄にも出してある。', 'ok'), fallback);
+    } else fallback();
+  });
+  $('pasteJsonBtn').addEventListener('click', () => {
+    const text = $('saveText').value.trim();
+    if (!text) { saveMsg('下の欄にセーブデータのJSONを貼り付けてね。', 'err'); return; }
+    loadJson(text);
+  });
 
   render();
 })();
