@@ -1,4 +1,4 @@
 {
-  "prompt": "Origin: existing Open Spire game art (musoukun/openslaythe sprites/ui/hero_standing_luca.png, made with Codex for the game), converted to webp for the site (issue #1180)",
-  "createdAt": "2026-10-25T20:44:42.781Z"
+  "prompt": "Origin: Open Spire game art for Luca's base idle (musoukun/openslaythe #974, tools/codex_art/luca_idle_ring_assets.json id luca_base_idle_ring), taken from the full-size Codex raw and trimmed for the site. Prompt: The attached image is a single full-body figure of the boy mage holding an open pocket watch at waist height, other hand open, a blue light ring circling his body; fix his gaze and remove the backdrop.",
+  "createdAt": "2026-10-25T22:07:02.612Z"
 }
