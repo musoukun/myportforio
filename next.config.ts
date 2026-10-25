@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
 	images: {
 		unoptimized: true,
 	},
+	// public/ に置いた 1 枚の HTML のページ (書き出しのときは静的なホストが index.html を返していた)
+	async rewrites() {
+		return [{ source: "/form-dev-game/", destination: "/form-dev-game/index.html" }];
+	},
 };
 
 export default nextConfig;
