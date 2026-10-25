@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-26T00:00:00Z",
+  "title": "Design System: Open Spire",
+  "extensions": {
+    "colorMeta": {
+      "ground": { "role": "neutral", "displayName": "焦げ茶の黒", "canonical": "#0f0d0a", "tonalRamp": ["#0f0d0a", "#17130e", "#221b12", "#2f261a", "#4a3d2b", "#6e5f48", "#9a8c74", "#d6ccb8"] },
+      "gold": { "role": "primary", "displayName": "古い金", "canonical": "#e3b65b", "tonalRamp": ["#1b1407", "#3d2d0e", "#5e400c", "#8f6a1f", "#c0933f", "#e3b65b", "#f0cf8d", "#f4dca2"] },
+      "gold-soft": { "role": "primary", "displayName": "淡い金のクリーム", "canonical": "#f4dca2", "tonalRamp": ["#5e400c", "#8f6a1f", "#c0933f", "#e3b65b", "#f4dca2", "#f8e6bd", "#fff3d4", "#fff8e6"] },
+      "text": { "role": "neutral", "displayName": "羊皮紙の本文", "canonical": "#ece6d6", "tonalRamp": ["#3a2f21", "#5c5040", "#7d705c", "#b9ae98", "#d6ccb8", "#ece6d6", "#f6eedb", "#fff8e6"] },
+      "fixes": { "role": "tertiary", "displayName": "珊瑚 (直した不具合)", "canonical": "#ef8a7a", "tonalRamp": ["#3a1a15", "#5e2a22", "#8a3f33", "#b95b4c", "#ef8a7a", "#f3a597", "#f7c0b5", "#fbdcd6"] },
+      "features": { "role": "tertiary", "displayName": "緑 (追加した機能)", "canonical": "#78d1a4", "tonalRamp": ["#10281c", "#1b4430", "#2b6448", "#3f8a64", "#78d1a4", "#96dcb9", "#b4e7ce", "#d3f2e2"] }
+    },
+    "typographyMeta": {
+      "logo": { "displayName": "Logo", "purpose": "上の帯の OPEN SPIRE。Cinzel 800、字間 0.14em。" },
+      "narration": { "displayName": "語り", "purpose": "下の帯の 1 行。丸ゴシック 700、中央、最大 36em。" },
+      "section-title": { "displayName": "区画の見出し", "purpose": "特設サイトの各区画。" },
+      "page-title": { "displayName": "ページの見出し", "purpose": "リリース記録・Mac の注意。" },
+      "version": { "displayName": "版番号", "purpose": "リリース記録の版。Cinzel 800。" },
+      "body": { "displayName": "本文", "purpose": "読むページの本文。幅 760px。" },
+      "label": { "displayName": "英語名", "purpose": "主人公の英語名。Cinzel 600、字間 0.16em。" }
+    },
+    "shadows": [
+      { "name": "band-lift", "value": "0 -18px 40px rgba(0,0,0,0.35)", "purpose": "語りの帯を絵から浮かせる。" },
+      { "name": "text-over-art", "value": "0 1px 8px rgba(0,0,0,0.85)", "purpose": "絵の上のリンクや数字を読ませる。" },
+      { "name": "hero-standing", "value": "drop-shadow(0 14px 18px rgba(0,0,0,0.55))", "purpose": "立ち絵を浮かせる。" },
+      { "name": "carved-name", "value": "0 -0.12cqi 0 rgba(22,12,0,0.9), 0 -0.28cqi 0.12cqi rgba(22,12,0,0.45), 0 0.24cqi 0 rgba(255,244,214,0.85), 0 0.4cqi 0.3cqi rgba(255,244,214,0.3)", "purpose": "石の碑の名前の彫り込み。" }
+    ],
+    "motion": [
+      { "name": "scene-pan", "value": "animation-timeline: --scene; pan linear both", "purpose": "場面の中で絵を左から右へ流す。対応ブラウザと動き許可のときだけ。" },
+      { "name": "scene-dissolve", "value": "brightness(0.3) saturate(0.6) -> none, entry 10% to 90%", "purpose": "次の絵が暗いまま重なり、明るくなる。" },
+      { "name": "write", "value": "clip-path inset(0 100% 0 0) -> inset(0)", "purpose": "語りと石の名前を左から書く。" },
+      { "name": "torch-flicker", "value": "3.4s steps(1, end) infinite", "purpose": "石壁の松明の明るさのゆらぎ。" },
+      { "name": "hover-ease", "value": "0.2s ease-out", "purpose": "記録リンクの地・線・矢印。" }
+    ],
+    "breakpoints": [
+      { "name": "xs", "value": "480px" },
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "700px" },
+      { "name": "lg", "value": "900px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Top Bar",
+      "kind": "nav",
+      "refersTo": "top-bar",
+      "description": "ロゴと 3 つのリンク。読むページでは地の色で貼りつく。",
+      "html": "<header class=\"ds-bar\"><a class=\"ds-logo\" href=\"#\">OPEN SPIRE</a><nav><ul class=\"ds-links\"><li><a href=\"#\">戦士の石壁</a></li><li><a href=\"#\">リリース記録</a></li></ul></nav></header>",
+      "css": ".ds-bar{display:flex;align-items:center;justify-content:space-between;padding:18px 32px;background:rgba(15,13,10,0.94);border-bottom:1px solid rgba(227,182,91,0.28)} .ds-logo{font-family:Cinzel,serif;font-weight:800;font-size:1.5rem;letter-spacing:0.14em;color:#f4dca2;text-decoration:none;text-shadow:0 2px 12px rgba(0,0,0,0.6),0 0 18px rgba(227,182,91,0.35)} .ds-links{display:flex;gap:24px;margin:0;padding:0;list-style:none;font-weight:700;font-size:0.95rem} .ds-links a{color:#f4dca2;text-decoration:none} .ds-links a:hover{color:#fff3d4;text-decoration:underline} .ds-links a:focus-visible,.ds-logo:focus-visible{outline:2px solid #e3b65b;outline-offset:3px;border-radius:4px}"
+    },
+    {
+      "name": "Narration Band",
+      "kind": "custom",
+      "refersTo": "narration-band",
+      "description": "絵の下の暗い帯。語り 1 行と 8 つの目盛り。",
+      "html": "<div class=\"ds-band\"><p class=\"ds-line\">むかし、この森には精霊がいました。</p><ul class=\"ds-ticks\"><li class=\"on\"></li><li></li><li></li><li></li></ul></div>",
+      "css": ".ds-band{display:flex;flex-direction:column;align-items:center;gap:18px;padding:34px 48px 30px;background:rgba(15,13,10,0.8);box-shadow:0 -18px 40px rgba(0,0,0,0.35)} .ds-line{margin:0;max-width:36em;text-align:center;font-size:1.5rem;font-weight:700;line-height:1.7;letter-spacing:0.03em;color:#f6eedb;text-wrap:balance} .ds-ticks{display:flex;gap:8px;margin:0;padding:0;list-style:none} .ds-ticks li{width:26px;height:3px;border-radius:2px;background:rgba(227,182,91,0.28)} .ds-ticks li.on{background:#e3b65b}"
+    },
+    {
+      "name": "Record Link",
+      "kind": "card",
+      "refersTo": "record-link",
+      "description": "リリース記録や Mac の注意へ行く札。",
+      "html": "<a class=\"ds-record\" href=\"#\"><span class=\"ds-record-title\">リリース記録</span><span class=\"ds-record-text\">版ごとの変更を読む</span><span class=\"ds-record-arrow\">→</span></a>",
+      "css": ".ds-record{position:relative;display:flex;flex-direction:column;gap:6px;padding:22px 56px 22px 24px;border:1px solid rgba(227,182,91,0.28);border-radius:10px;background:#17130e;text-decoration:none;transition:background-color .2s ease-out,border-color .2s ease-out} .ds-record:hover{background:#221b12;border-color:rgba(227,182,91,0.6)} .ds-record:focus-visible{outline:2px solid #e3b65b;outline-offset:3px} .ds-record-title{font-size:1.2rem;font-weight:800;color:#f4dca2} .ds-record-text{font-size:0.9rem;color:#b9ae98} .ds-record-arrow{position:absolute;right:22px;top:50%;margin-top:-11px;color:#e3b65b;transition:transform .2s ease-out} .ds-record:hover .ds-record-arrow{transform:translateX(4px)}"
+    },
+    {
+      "name": "Version Chip",
+      "kind": "chip",
+      "refersTo": "version-chip",
+      "description": "リリース記録の版へ飛ぶ丸い札。",
+      "html": "<a class=\"ds-chip\" href=\"#\">v0.3.0</a>",
+      "css": ".ds-chip{display:inline-block;padding:2px 14px;border:1px solid rgba(227,182,91,0.28);border-radius:999px;background:rgba(227,182,91,0.06);font-weight:700;font-size:0.88rem;color:#f4dca2;text-decoration:none} .ds-chip:hover{background:rgba(227,182,91,0.18)} .ds-chip:focus-visible{outline:2px solid #e3b65b;outline-offset:3px}"
+    },
+    {
+      "name": "Release Group",
+      "kind": "custom",
+      "refersTo": "release-group",
+      "description": "分類の色の菱形の見出しと、点つきの項目。",
+      "html": "<div class=\"ds-group\"><h3>直した不具合</h3><ul><li>ショップで止まる不具合を直した</li><li>セーブが読めない不具合を直した</li></ul></div>",
+      "css": ".ds-group{--accent:#ef8a7a;color:#ece6d6} .ds-group h3{display:flex;align-items:center;gap:10px;margin:0 0 8px;font-size:1.05rem;font-weight:800;color:var(--accent)} .ds-group h3::before{content:'';width:9px;height:9px;border-radius:2px;background:var(--accent);transform:rotate(45deg)} .ds-group ul{margin:0;padding:0;list-style:none} .ds-group li{position:relative;padding:9px 4px 9px 22px;border-top:1px solid rgba(236,230,214,0.07)} .ds-group li:first-child{border-top:0} .ds-group li::before{content:'';position:absolute;left:4px;top:1.15em;width:6px;height:6px;border-radius:50%;background:var(--accent)}"
+    },
+    {
+      "name": "Carved Name",
+      "kind": "custom",
+      "refersTo": "stone-wall",
+      "description": "石の碑に刻む金箔の名前。字は暗く、上に影、下に光。",
+      "html": "<div class=\"ds-stone\"><span class=\"ds-carved\">MEIJICOCOA</span></div>",
+      "css": ".ds-stone{display:grid;place-items:center;padding:24px 48px;background:#8a7c66} .ds-carved{font-family:Cinzel,serif;font-weight:800;font-size:2rem;letter-spacing:0.06em;color:#5e400c;text-shadow:0 -1px 0 rgba(22,12,0,0.9),0 -2px 1px rgba(22,12,0,0.45),0 2px 0 rgba(255,244,214,0.85),0 3px 2px rgba(255,244,214,0.3)}"
+    },
+    {
+      "name": "Step Number and Command",
+      "kind": "custom",
+      "refersTo": "step-number",
+      "description": "Mac の手順の金の丸と、コマンドの黒い枠。",
+      "html": "<div class=\"ds-step\"><ol><li>ターミナルを開く</li></ol><pre class=\"ds-cmd\">xattr -cr OpenSpire.app</pre></div>",
+      "css": ".ds-step ol{margin:0 0 14px;padding:0;list-style:none;counter-reset:step;color:#ece6d6} .ds-step li{counter-increment:step;position:relative;padding:10px 0 10px 46px} .ds-step li::before{content:counter(step);position:absolute;left:0;top:10px;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#e3b65b;font-family:Cinzel,serif;font-weight:800;color:#1b1407} .ds-cmd{margin:8px 0 0;padding:12px 14px;overflow-x:auto;border:1px solid rgba(227,182,91,0.28);border-radius:8px;background:rgba(0,0,0,0.4);font-family:Menlo,Consolas,monospace;font-size:0.9rem;color:#ece6d6}"
+    }
+  ],
+  "narrative": {
+    "northStar": "ゲームのオープニングをめくる絵本",
+    "overview": "ページそのものがゲームのオープニング。描かれた絵が画面いっぱいに貼りつき、スクロールすると次の絵が下から重なってくる。語りは絵の下の暗い帯の真ん中に 1 行だけ。ゲームの画面から飛んできた人が、違うサイトに来たと感じないことを目指している。\n\n地は焦げ茶がかった黒（#0f0d0a）で、そこに金（#e3b65b）とクリームを置く。絵が主役なので、枠や飾りはほとんど足さない。読むページ（リリース記録・Mac の注意）は同じ色と字を使いつつ、飾りをやめて読みやすさを先にする。",
+    "keyCharacteristics": [
+      "暗い地に金とクリーム。色は少なく、絵が色を持つ。",
+      "ロゴ・ローマ数字・版番号・名前の刻みは Cinzel、文章は M PLUS Rounded 1c。",
+      "影は「絵の上で字を読ませる」ためか、石に彫る表現にだけ使う。",
+      "動きはスクロール連動だけ。動きを減らす設定では止める。",
+      "角の丸みは小さい（4〜10px）。立ち絵や石は丸めない。"
+    ],
+    "rules": [
+      { "name": "The One Gold Rule", "body": "差し色は金ひとつ。リリース記録の 3 色と主人公の色は「分類の印」であって、画面の差し色を増やすものではない。", "section": "colors" },
+      { "name": "The Dark Ground Rule", "body": "地は #0f0d0a から動かさない。明るい地の面は作らない（石の碑は絵の中のもの）。", "section": "colors" },
+      { "name": "The Cinzel Is Latin Rule", "body": "Cinzel はロゴ・ローマ数字・版番号・英語名・石の名前だけ。日本語の文章には使わない。", "section": "typography" },
+      { "name": "The Phrase Break Rule", "body": "日本語の見出しと語りは word-break: auto-phrase と text-wrap: balance で、文節の途中で折らない。", "section": "typography" },
+      { "name": "The Text Over Art Rule", "body": "影は、絵の上の字を読ませるか、石の彫りを作るためにだけ使う。札や枠の飾りには使わない。", "section": "elevation" }
+    ],
+    "dos": [
+      "Do 地は #0f0d0a、差し色は金ひとつにする。",
+      "Do 絵の上の字には、字の影か暗い下地を付ける。",
+      "Do スクロール連動の動きは animation-timeline の対応ブラウザだけに付け、prefers-reduced-motion: no-preference のときだけ動かす。対応しないブラウザでは止まった絵のまま読めるようにする。",
+      "Do 読むページは幅 760px・本文 1rem・行間 1.8 で、飾りは版番号と色の印だけにする。",
+      "Do フォーカスは 2px の金の輪 (offset 3px)。"
+    ],
+    "donts": [
+      "Don't 「大きな見出し + 機能の札の列」のゲーム紹介ページにしない。ダウンロード・応援・連絡の欄は置かない。",
+      "Don't ポートフォリオ (/) の見た目をこの区画に混ぜない。",
+      "Don't 日本語の文章に Cinzel を使わない。",
+      "Don't 主人公の色を面や背景に広げない。",
+      "Don't 重い 3D の仕掛けを足さない。"
+    ]
+  }
+}

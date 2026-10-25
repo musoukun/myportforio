@@ -47,3 +47,8 @@ CURRENT-TASK.md
 
 
 .vercel
+
+# impeccable の作業ファイル (案の下書き・撮影)。方針の正本は .impeccable/surfaces/ と PRODUCT.md
+.impeccable/mocks/
+.impeccable/review/
+.impeccable/decision/
