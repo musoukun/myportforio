@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="簡単な申込フォームを作りながら、後出しの要望で作り直しが起きる様子と、Kanban・Git・GitHub が役に立つ場面を体験するゲーム。">
+<title>申込フォーム開発ゲーム</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 左に物語とボタン、右に Kanban の板・Git の記録・できあがりのフォーム。狭い画面では縦に積む */
+:root {
+  --bg: #eef1f5;
+  --panel: #ffffff;
+  --ink: #1b2433;
+  --muted: #5d6878;
+  --line: #d3d9e2;
+  --accent: #2c55d6;
+  --accent-ink: #ffffff;
+  --note: #fff3a8;
+  --note-ink: #3a3410;
+  --bad: #c8372d;
+  --bad-soft: #fbe3e1;
+  --good: #1f7a4d;
+  --good-soft: #dff3e8;
+  --shadow: 0 1px 2px rgba(27,36,51,.08), 0 4px 14px rgba(27,36,51,.06);
+  --f-display: "DotGothic16", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --f-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161d; --panel: #1b212b; --ink: #e6ebf2; --muted: #9aa5b5; --line: #2e3744;
+    --accent: #7c9cff; --accent-ink: #0d1220; --note: #5b5420; --note-ink: #fff7c4;
+    --bad: #ff7b70; --bad-soft: #3a1f1d; --good: #5fd39a; --good-soft: #17322a;
+    --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161d; --panel: #1b212b; --ink: #e6ebf2; --muted: #9aa5b5; --line: #2e3744;
+  --accent: #7c9cff; --accent-ink: #0d1220; --note: #5b5420; --note-ink: #fff7c4;
+  --bad: #ff7b70; --bad-soft: #3a1f1d; --good: #5fd39a; --good-soft: #17322a;
+  --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body);
+  font-size: 15px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(24px, 4vw, 34px); line-height: 1.2; margin: 0; letter-spacing: .02em; }
+.sub { color: var(--muted); margin: 4px 0 0; font-size: 13px; }
+.clock { display: grid; gap: 6px; min-width: 260px; flex: 0 1 340px; }
+.clock-nums { display: flex; justify-content: space-between; font-family: var(--f-display); font-size: 18px; font-variant-numeric: tabular-nums; }
+.clock-nums small { font-family: var(--f-body); font-size: 12px; color: var(--muted); margin-right: 4px; }
+.bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; position: relative; }
+.bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .4s ease, background .3s; }
+.bar i.over { background: var(--bad); }
+.bar b { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; min-width: 0; }
+.side { display: grid; gap: 18px; min-width: 0; }
+.label { font-size: 11px; letter-spacing: .12em; color: var(--muted); font-weight: 700; margin: 0 0 10px; }
+
+/* 物語 */
+.story { display: grid; gap: 14px; }
+.speaker { display: flex; gap: 10px; align-items: flex-start; }
+.avatar { flex: none; width: 38px; height: 38px; border-radius: 8px; display: grid; place-items: center; font-family: var(--f-display); font-size: 15px; background: var(--accent); color: var(--accent-ink); }
+.avatar.dev { background: var(--ink); color: var(--panel); }
+.avatar.warn { background: var(--bad); color: #fff; }
+.bubble { background: var(--bg); border-radius: 10px; padding: 10px 14px; min-width: 0; }
+.bubble strong { font-weight: 700; }
+.scene-title { font-family: var(--f-display); font-size: 20px; margin: 0; line-height: 1.4; }
+.choices { display: grid; gap: 10px; }
+.choice {
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; text-align: left;
+  font: inherit; color: var(--ink); background: var(--panel); border: 1.5px solid var(--line);
+  border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: border-color .15s, transform .1s;
+}
+.choice:hover:not(:disabled) { border-color: var(--accent); }
+.choice:active:not(:disabled) { transform: translateY(1px); }
+.choice:focus-visible, .btn:focus-visible, .kcard:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.choice:disabled { opacity: .45; cursor: not-allowed; }
+.choice .t { font-weight: 700; }
+.choice .d { grid-column: 1 / -1; color: var(--muted); font-size: 13px; }
+.cost { font-family: var(--f-display); font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cost.zero { color: var(--good); }
+.hint { grid-column: 1 / -1; font-size: 13px; background: var(--note); color: var(--note-ink); border-radius: 6px; padding: 4px 8px; }
+.btn {
+  font: inherit; font-weight: 700; border: 0; border-radius: 8px; padding: 10px 16px; cursor: pointer;
+  background: var(--accent); color: var(--accent-ink);
+}
+.btn.ghost { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; background: var(--bg); padding: 10px 12px; border-radius: 8px; cursor: pointer; }
+.check input { margin-top: 5px; }
+.est { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+@media (max-width: 420px) { .est { grid-template-columns: repeat(2, 1fr); } }
+.est .choice { grid-template-columns: 1fr; text-align: center; font-family: var(--f-display); font-size: 20px; }
+.result-box { padding: 10px 14px; border-radius: 8px; font-size: 14px; }
+.result-box.bad { background: var(--bad-soft); }
+.result-box.good { background: var(--good-soft); }
+.tool-tip { border-left: 3px solid var(--accent); padding: 4px 0 4px 12px; font-size: 14px; color: var(--muted); }
+.tool-tip b { color: var(--ink); }
+
+/* Kanban */
+.board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.col { background: var(--bg); border-radius: 8px; padding: 8px; min-height: 120px; display: grid; align-content: start; gap: 6px; min-width: 0; }
+.col h3 { margin: 0 0 2px; font-size: 12px; font-weight: 700; color: var(--muted); display: flex; justify-content: space-between; }
+.kcard {
+  background: var(--note); color: var(--note-ink); border-radius: 4px; padding: 6px 8px; font-size: 12px; line-height: 1.45;
+  box-shadow: var(--shadow); border: 0; text-align: left; font-family: inherit; width: 100%; min-width: 0; overflow-wrap: anywhere;
+}
+button.kcard { cursor: pointer; }
+button.kcard:hover { outline: 2px solid var(--accent); }
+.kcard .no { font-family: var(--f-mono); font-size: 10px; opacity: .7; display: block; }
+.kcard .days { font-family: var(--f-display); font-size: 12px; display: block; margin-top: 2px; }
+.kcard.rework { background: var(--bad-soft); color: var(--ink); box-shadow: inset 3px 0 0 var(--bad), var(--shadow); }
+.kcard.new { animation: pop .5s ease; }
+@keyframes pop { from { transform: scale(.8) rotate(-3deg); opacity: .3; } to { transform: none; opacity: 1; } }
+
+/* Git */
+.git { display: grid; gap: 10px; }
+.log { font-family: var(--f-mono); font-size: 12px; display: grid; gap: 2px; max-height: 210px; overflow: auto; }
+.log div { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.log .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.log .branch .dot { background: transparent; border: 2px solid var(--muted); margin-left: 14px; }
+.log .gone { text-decoration: line-through; color: var(--muted); }
+.log .empty { color: var(--muted); }
+.dirty { font-size: 12px; color: var(--bad); font-weight: 700; }
+.clean { font-size: 12px; color: var(--good); font-weight: 700; }
+
+/* できあがりのフォーム */
+.form { display: grid; gap: 8px; font-size: 13px; }
+.form .f { display: grid; grid-template-columns: 6.5em minmax(0, 1fr); gap: 8px; align-items: center; }
+.form .f span:first-child { color: var(--muted); }
+.form .box { border: 1px solid var(--line); border-radius: 5px; padding: 3px 8px; background: var(--bg); font-family: var(--f-mono); font-size: 12px; min-width: 0; overflow-wrap: anywhere; }
+.form .add { animation: flash 1.2s ease; }
+@keyframes flash { 0% { background: var(--note); } 100% { background: transparent; } }
+.form .tag { font-size: 11px; color: var(--accent); font-weight: 700; }
+.form .none { color: var(--muted); font-style: normal; }
+
+/* 結果 */
+.big { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: baseline; font-family: var(--f-display); }
+.big .n { font-size: clamp(40px, 7vw, 64px); line-height: 1; font-variant-numeric: tabular-nums; }
+.big .n.bad { color: var(--bad); }
+.big .u { font-size: 14px; color: var(--muted); font-family: var(--f-body); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 700; }
+td.num { text-align: right; font-family: var(--f-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl { overflow-x: auto; }
+.lessons { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.lessons li { display: grid; gap: 2px; }
+.lessons li b { font-size: 15px; }
+.lessons li span { color: var(--muted); font-size: 14px; }
+ul.qs { margin: 0; padding-left: 1.2em; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* 難しさの内訳 */
+.bd { list-style: none; margin: 0; padding: 10px 12px; background: var(--bg); border-radius: 8px; display: grid; gap: 4px; font-size: 13px; }
+.bd li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }
+.bd li b { font-family: var(--f-display); font-weight: 400; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kind { font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 1px 6px; border-radius: 4px; background: var(--panel); color: var(--muted); border: 1px solid var(--line); white-space: nowrap; }
+.kind.ext { color: var(--accent); border-color: var(--accent); }
+.kind.code { color: var(--bad); border-color: var(--bad); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12px; padding: 2px 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); }
+.chip b { font-weight: 700; }
+/* 先回り準備 */
+.prep { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 10px; align-items: start; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px; cursor: pointer; }
+.prep:has(input:checked) { border-color: var(--accent); background: var(--bg); }
+.prep input { margin-top: 6px; }
+.prep .t { font-weight: 700; }
+.prep .d, .prep .hint { grid-column: 2 / -1; }
+.prep .d { color: var(--muted); font-size: 13px; }
+.total { display: flex; justify-content: space-between; font-size: 14px; padding: 0 4px; }
+.total b { font-family: var(--f-display); font-weight: 400; font-size: 18px; }
+/* 日数を伝える */
+.stepper { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.stepper .num { font-family: var(--f-display); font-size: clamp(30px, 6vw, 42px); min-width: 5.5em; text-align: center; font-variant-numeric: tabular-nums; }
+.stepper .num small { display: block; font-family: var(--f-body); font-size: 12px; color: var(--muted); }
+.btn.sm { padding: 6px 10px; font-size: 13px; }
+/* スコア */
+.score { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; font-family: var(--f-display); }
+.score .pts { font-size: clamp(48px, 9vw, 76px); line-height: 1; }
+.score .rank { font-size: 28px; padding: 2px 14px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); }
+td.mark { text-align: center; font-weight: 700; }
+td.mark.o { color: var(--good); }
+td.mark.x { color: var(--muted); }
+.code-size { font-size: 12px; color: var(--muted); }
+.code-size b { font-family: var(--f-display); font-weight: 400; color: var(--ink); font-size: 14px; }
+/* クリア後の作りの図（Before / After） */
+.arch-pair { display: grid; gap: 12px; }
+.arch { display: grid; gap: 6px; border: 1px solid var(--line); border-radius: 8px; padding: 12px; min-width: 0; }
+.arch-h { margin: 0; font-weight: 700; font-size: 14px; }
+/* 流れ図。列の数は --n で渡す */
+.flow { --gap: 8px; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); column-gap: var(--gap); }
+.flow > .wide { grid-column: 1 / -1; }
+.fbox { border: 1.5px solid var(--line); border-radius: 6px; padding: 4px 6px; text-align: center; font-size: 12px; line-height: 1.5; background: var(--panel); }
+.fbox.dup { background: var(--bad-soft); border-color: var(--bad); }
+.fbox.one { background: var(--good-soft); border-color: var(--good); font-weight: 700; justify-self: center; width: min(100%, 220px); }
+.fbox.set { border-style: dashed; }
+.fbox.new { background: var(--good-soft); border-color: var(--good); font-weight: 700; }
+.farrow { text-align: center; color: var(--muted); font-size: 12px; line-height: 1.4; }
+.fmerge { height: 10px; margin: 0 calc((100% - (var(--n) - 1) * var(--gap)) / var(--n) / 2); border: 1.5px solid var(--muted); border-top: none; border-radius: 0 0 6px 6px; }
+@media (max-width: 480px) { .flow { --gap: 4px; } .fbox { font-size: 11px; padding: 3px 1px; } }
+.fset { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; align-items: center; font-size: 12px; }
+.arch-count { margin: 0; font-size: 13px; color: var(--muted); }
+.arch-count b { color: var(--ink); }
+/* セーブ */
+.save { display: grid; gap: 10px; }
+.save textarea { width: 100%; font-family: var(--f-mono); font-size: 11px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; resize: vertical; }
+.save-msg { margin: 0; font-size: 13px; min-height: 1.4em; color: var(--muted); }
+.save-msg.ok { color: var(--good); }
+.save-msg.err { color: var(--bad); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>申込フォーム開発ゲーム</h1>
+      <p class="sub">簡単なはずの開発で、後から何が起きるかを体験する（1人20分くらい・8時間＝1日）</p>
+    </div>
+    <div class="clock" aria-live="polite">
+      <div class="clock-nums"><span><small>かかった時間</small><span id="dayNum">0日</span></span><span><small id="estLabel">あなたの予想</small><span id="estNum">―</span></span></div>
+      <div class="bar"><i id="barFill"></i><b id="barMark" hidden></b></div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <main class="panel story" id="story" aria-live="polite"></main>
+    <aside class="side">
+      <section class="panel">
+        <p class="label">KANBAN（やることの板）</p>
+        <div class="board" id="board"></div>
+      </section>
+      <section class="panel git">
+        <p class="label">GIT（保存の記録）</p>
+        <div class="row" style="justify-content: space-between">
+          <span id="gitState"></span>
+          <button class="btn" id="commitBtn" type="button">今の状態を保存する</button>
+        </div>
+        <div class="code-size">いまのコードの量 <b id="codeSize">0行</b>（多いほど、直すときの確認に時間がかかる）</div>
+        <div class="log" id="gitLog"></div>
+      </section>
+      <section class="panel">
+        <p class="label">いま作っているフォーム</p>
+        <div class="form" id="form"></div>
+      </section>
+      <section class="panel save">
+        <p class="label">セーブ（続きから遊ぶ）</p>
+        <div class="row">
+          <button class="btn" id="saveFileBtn" type="button">ファイルに保存</button>
+          <button class="btn ghost" id="loadFileBtn" type="button">ファイルから読み込む</button>
+          <input type="file" id="loadFile" accept="application/json,.json" hidden>
+        </div>
+        <div class="row">
+          <button class="btn ghost" id="copyJsonBtn" type="button">JSONをコピー</button>
+          <button class="btn ghost" id="pasteJsonBtn" type="button">貼り付けたJSONで再開</button>
+        </div>
+        <textarea id="saveText" rows="3" placeholder="ここにセーブデータのJSONを貼り付ける" aria-label="セーブデータのJSON"></textarea>
+        <p class="save-msg" id="saveMsg" aria-live="polite"></p>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ===== 時間の決まり（すべて「時間」。8時間＝1日） =====
+  const HEAR_H = 6;          // 関係者に話を聞いて回る
+  const BUILD = { h: 8, lines: 300 };
+  // 今あるコードの量から、影響を確かめる時間と、確かめずに直したときに不具合が出る確率を出す
+  const CHECK_PER = { rework: 250, small: 1000, none: Infinity };   // この行数ごとに1時間
+  const BUG_PER = { rework: 1500, small: 5000, none: Infinity };    // この行数で確率100%
+  const BUG_MAX = { rework: 0.85, small: 0.5, none: 0 };
+  const r05 = (x) => Math.round(x * 2) / 2;
+  const checkH = (touch, code) => r05(code / CHECK_PER[touch]);
+  const bugRate = (touch, code) => Math.min(BUG_MAX[touch], code / BUG_PER[touch]);
+  const stepsH = (t) => t.steps.reduce((s, x) => s + x[1], 0);
+
+  // ===== データ =====
+  const DESIGN = [
+    { key: 'q1', q: '申し込んだ人を、どうやって見分ける？',
+      a: { t: '名前で見分ける', d: '名前がそのまま目印になる。作るのが一番早い。', h: 0, lines: 0 },
+      b: { t: '1人ずつ番号を振る', d: '名前とは別に、申込ごとに番号を付ける。', h: 2, lines: 60 },
+      hint: '総務から「同じ名前の社員が何人かいる」と聞いた。' },
+    { key: 'q2', q: '申込の取り消しは考える？',
+      a: { t: '考えない', d: '取り消しの話は出ていないので作らない。', h: 0, lines: 0 },
+      b: { t: '「取り消し済み」の印を付けられるようにする', d: '消さずに印を付けて、誰が取り消したか残す。', h: 3, lines: 80 },
+      hint: '人事から「毎回、取り消しの連絡が何件も来る」と聞いた。' }
+  ];
+
+  const PREP = [
+    { key: 'log', t: '管理者ログインと、ログを見る画面', d: '誰がいつ申し込んだか、エラーが起きたかを後から見られる。', h: 10, lines: 400, card: 'c6',
+      hint: '情報システム部「社内のシステムは、問い合わせに答えられるようにログを残すルールだよ」' },
+    { key: 'api', t: '外から名前とメールを受け取れる入口', d: 'ほかのシステムから申込データを入れられるように、入口を分けておく。', h: 6, lines: 200, card: 'c7',
+      hint: '総務「いずれ社員名簿システムから自動で入ったら楽だね」' },
+    { key: 'app', t: 'スマホアプリ版', d: 'iPhone と Android のアプリも作っておく。', h: 24, lines: 1200, card: null,
+      hint: 'みんな会社のPCから申し込む。アプリの話は誰からも出なかった。' },
+    { key: 'en', t: '英語の画面', d: '画面の文言を英語に切り替えられるようにする。', h: 10, lines: 300, card: null,
+      hint: '海外支社「画面は日本語で大丈夫だよ」' }
+  ];
+
+  const NAME_EXT = ['名簿システムの仕様を、情報システム部に確認する', 2, 12];
+  const CARDS = {
+    v1: { no: '初版', title: '名前とメールで申し込めるフォーム' },
+    c1: { no: '①', title: '同姓同名の人がいた', from: '総務', dep: 'q1',
+      say: '「田中 誠」さんが2人いて、どっちの申込か分からないよ。',
+      bad: { text: '名前で人を見分ける作りにしていた。保存の形から作り直しになる。', touch: 'rework', lines: 150,
+        steps: [['保存の形を変えて、番号を振る', 4], ['今までの申込を1件ずつ移し替える', 6], ['画面を直す', 2]] },
+      good: { text: '最初から番号を振っていたので、画面に番号を出すだけで済む。', touch: 'small', lines: 40,
+        steps: [['画面に番号を出す', 1.5]] },
+      ask: '同じ名前の人はいますか？' },
+    c2: { no: '②', title: '申込を取り消したい', from: '人事', dep: 'q2',
+      say: '間違えて申し込んだ人が「取り消したい」って。人数の集計からも外してね。',
+      bad: { text: '取り消しを記録する場所がない。ただ消すと、誰が取り消したか残らない。', touch: 'rework', lines: 120,
+        steps: [['取り消しの印を付ける場所を作る', 3], ['人数の集計の計算を直す', 3], ['取り消しボタンを付ける', 2]] },
+      good: { text: '印を付ける場所は最初からある。取り消しボタンを付けるだけで済む。', touch: 'small', lines: 60,
+        steps: [['取り消しボタンを付ける', 2]] },
+      ask: '申込を取り消すことはありますか？' },
+    c5: { no: '③', title: '顔写真で本人確認', from: 'PM',
+      say: '受付を楽にしたいから、顔写真で本人か確認できるようにして。名前の欄と同じくらいでできるでしょ？',
+      main: { steps: [['顔写真で見分ける方法を調べる', 4], ['フォームに組み込んでみる', 16], ['社員の写真で試す', 4]], ext: ['顔認証サービスの試用を申し込む', 2, 6], lines: 500 },
+      branch: { steps: [['顔写真で見分ける方法を調べる', 4], ['別の場所で小さく試す', 8], ['結果をまとめる', 2]], ext: ['顔認証サービスの試用を申し込む', 2, 6] },
+      ask: '当日の本人確認はどうしますか？' },
+    c6: { no: '④', title: '申込が届いていない？', from: '人事', prep: 'log',
+      say: '「申し込んだのに確認できない」って人がいるよ。ログはどう管理してるの？',
+      bad: { text: 'ログを残していなかった。この人の原因は、もう調べられない。全部の処理にログを足すので、今あるコード全体に手が入る。', touch: 'rework', lines: 400,
+        steps: [['管理者ログインを作る', 4], ['全部の処理にログを記録する仕組みを足す', 4], ['ログを見る画面を作る', 3], ['問い合わせた人に謝って、再登録してもらう', 1]] },
+      good: { text: '管理者画面でログを見たら、メールアドレスの打ち間違いだと分かった。', touch: 'none', lines: 0,
+        steps: [['ログを見て原因を調べる', 1], ['その人に連絡する', 0.5]] },
+      ask: '問い合わせがあったとき、何を調べられるようにしますか？' },
+    c7: { no: '⑤', title: '社員名簿から読み込みたい', from: '総務', prep: 'api',
+      say: '来年は社員名簿システムから名前とメールを読み込んで、入力の手間をなくしたいな。',
+      bad: { text: '名前とメールの入力が、画面に直接くっついた作りになっている。入力と保存を切り離すところから作り直す。', touch: 'rework', lines: 350,
+        steps: [['入力と保存の処理を切り離す', 6], ['外から受け取る入口を作る', 4], ['画面をつなぎ直す', 3], ['名簿システムとつなぐ', 4]], ext: NAME_EXT },
+      good: { text: '受け取る入口を作っておいたので、名簿システムとつなぐだけで済む。ただし相手のシステムの確認は、準備していても省けない。', touch: 'small', lines: 150,
+        steps: [['名簿システムとつなぐ', 4]], ext: NAME_EXT },
+      ask: 'ほかのシステムとつなぐ予定はありますか？' }
+  };
+
+  // クリア後の作り直し（リファクタリング）。点数には入れない
+  const REFACTOR = {
+    steps: [['処理を順番ごとに1か所にまとめる', 4], ['イベントごとに違う値を、設定に分ける', 2]],
+    addH: 0.5,   // 直したあとに、新人研修を足す時間
+    flow: ['確かめる', '保存する', 'ログを残す', 'メールを送る']
+  };
+
+  // 一番うまくいったときの時間（話を聞く・番号/印を記録・当たる準備だけする・毎回確認する）
+  const IDEAL = (() => {
+    const hit = PREP.filter((p) => p.card);
+    let h = HEAR_H + DESIGN.reduce((s, q) => s + q.b.h, 0) + hit.reduce((s, p) => s + p.h, 0) + BUILD.h;
+    let code = BUILD.lines + DESIGN.reduce((s, q) => s + q.b.lines, 0) + hit.reduce((s, p) => s + p.lines, 0);
+    [CARDS.c1.good, CARDS.c2.good, CARDS.c6.good, CARDS.c7.good].forEach((t) => {
+      h += stepsH(t) + checkH(t.touch, code) + (t.ext ? (t.ext[1] + t.ext[2]) / 2 : 0);
+      code += t.lines;
+    });
+    return h;
+  })();
+
+  // ===== 状態 =====
+  const fresh = () => ({
+    scene: 'intro', estimate: null, day: 0, heard: false, design: {}, dIdx: 0, prep: {}, promise: null, promiseDraft: 0,
+    cards: [{ id: 'v1', col: 'todo', days: 0, rework: false, note: true }],
+    commits: [], dirty: false, current: null, code: 0,
+    noteChecked: false, c5way: null, reverted: 0, manualFix: 0, reviewCost: 0, missing: 0, deliver: 0,
+    checkTotal: 0, skips: 0, bugs: 0, pendingBreak: null, lastMsg: '', boardMsg: '', fresh: {}
+  });
+  let S = (window.claude && window.claude.hot && window.claude.hot.data && window.claude.hot.data.S) || fresh();
+  if (window.claude && window.claude.hot && window.claude.hot.snapshot) {
+    window.claude.hot.snapshot(() => ({ S }));
+  }
+
+  // ===== 小さな道具 =====
+  const $ = (id) => document.getElementById(id);
+  const num = (x) => (Number.isInteger(x) ? String(x) : x.toFixed(1));
+  const fmtH = (h) => num(h) + '時間';
+  const fmtD = (h) => (h / 8).toFixed(1) + '日';
+  const both = (h) => `${fmtD(h)}（${fmtH(h)}）`;
+  const lines = (n) => n.toLocaleString('ja-JP') + '行';
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const card = (id) => S.cards.find((c) => c.id === id);
+  const addDays = (h) => { S.day += h; };
+  const issueNo = (id) => S.cards.findIndex((c) => c.id === id) + 1;
+  const lastSave = () => S.commits.filter((c) => !c.branch).pop();
+  const rollExt = (ext) => (ext ? ext[1] + Math.round(Math.random() * (ext[2] - ext[1]) * 2) / 2 : 0);
+  function addCard(id, extra) {
+    S.cards.push(Object.assign({ id, col: 'todo', days: 0, rework: false, note: false }, extra || {}));
+    S.fresh[id] = true;
+  }
+  function say(who, text, kind) {
+    const av = { PM: 'PM', 総務: '総', 人事: '人', 海外支社: '海', 情報システム部: '情', あなた: '私', '!': '!' }[who] || who.slice(0, 1);
+    return `<div class="speaker"><div class="avatar ${kind || ''}">${esc(av)}</div><div class="bubble"><strong>${esc(who === '!' ? '' : who)}</strong>${who === '!' ? '' : '<br>'}${text}</div></div>`;
+  }
+  // cost: 数字（時間）か、表示用の文字
+  function choice(i, t, d, cost, opts) {
+    opts = opts || {};
+    const label = cost == null ? '' : typeof cost === 'string' ? cost : (cost === 0 ? '+0時間' : '+' + fmtH(cost));
+    const c = label ? `<span class="cost ${cost === 0 ? 'zero' : ''}">${label}</span>` : '';
+    return `<button class="choice" type="button" data-i="${i}" ${opts.disabled ? 'disabled' : ''}><span class="t">${t}</span>${c}${d ? `<span class="d">${d}</span>` : ''}${opts.hint ? `<span class="hint">${opts.hint}</span>` : ''}</button>`;
+  }
+  const rangeLabel = (base, ext) => ext ? `+${num(base + ext[1])}〜${num(base + ext[2])}時間` : (base === 0 ? '+0時間' : '+' + fmtH(base));
+  // 難しさの内訳（手順・外部システム・今あるコード）
+  function breakdown(t, check) {
+    const rows = t.steps.map((s) => `<li><span class="kind">手順</span><span>${esc(s[0])}</span><b>${fmtH(s[1])}</b></li>`);
+    if (t.ext) rows.push(`<li><span class="kind ext">外部</span><span>${esc(t.ext[0])}（相手しだい）</span><b>${num(t.ext[1])}〜${fmtH(t.ext[2])}</b></li>`);
+    if (check > 0) rows.push(`<li><span class="kind code">既存コード</span><span>今ある ${lines(S.code)} への影響を確かめる</span><b>${fmtH(check)}</b></li>`);
+    return `<ul class="bd">${rows.join('')}</ul>`;
+  }
+  function chips(t) {
+    return `<div class="chips"><span class="chip">手順 <b>${t.steps.length}個</b></span><span class="chip">外部システム <b>${t.ext ? 'あり' : 'なし'}</b></span><span class="chip">今あるコード <b>${lines(S.code)}</b></span></div>`;
+  }
+  // クリア後の作りの図。申込を受け取る入口は、遊んだ結果から決める
+  const entries = () => ['申込フォーム', '取り消し', '社員名簿から'].concat(S.prep.app ? ['スマホアプリ'] : []);
+  const refactorH = () => stepsH(REFACTOR) + checkH('rework', S.code);
+  // 流れ図（Before / After）。箱を上から順に並べ、同じ処理は入口の数だけ箱を増やす
+  const fbox = (t, cls) => `<div class="fbox ${cls || ''}">${t}</div>`;
+  const perEntry = (f) => entries().map(f).join('');
+  function archBefore() {
+    const n = entries().length;
+    const steps = REFACTOR.flow.map((s) => perEntry(() => '<div class="farrow">↓</div>') + perEntry(() => fbox(esc(s), 'dup'))).join('');
+    return `<div class="arch"><p class="arch-h">Before：入口ごとに、同じ処理をそれぞれ書いている</p>
+      <div class="flow" style="--n:${n}">${perEntry((e) => fbox(esc(e)))}${steps}
+        ${perEntry(() => '<div class="farrow">┆</div>')}${perEntry(() => fbox('締切・文面<br>を直接書く', 'dup set'))}</div>
+      <p class="arch-count">赤い箱は、同じ処理が入口の数だけ並んでいる。処理の箱は全部で <b>${n * REFACTOR.flow.length}個</b>。直すときは、全部を同じように直す。</p></div>`;
+  }
+  function archAfter() {
+    const flow = REFACTOR.flow.map((s) => fbox(esc(s), 'one wide')).join('<div class="farrow wide">↓</div>');
+    return `<div class="arch"><p class="arch-h">After：処理を順番に、1本の流れにまとめた</p>
+      <div class="flow" style="--n:${entries().length}">${perEntry((e) => fbox(esc(e)))}${perEntry(() => '<div class="farrow">↓</div>')}
+        <div class="fmerge wide"></div><div class="farrow wide">↓ どの入口からも、ここを通る</div>${flow}
+        <div class="farrow wide">┆ 締切と文面は、イベントごとの設定から読む</div>
+        <div class="fset wide">${fbox('社内イベントの設定', 'set')}${fbox('新人研修の設定', 'set new')}</div></div>
+      <p class="arch-count">処理の箱は <b>${REFACTOR.flow.length}個</b>。研修を足すときは、設定の箱を1つ足すだけ。</p></div>`;
+  }
+  const noteBox = () => `<label class="check"><input type="checkbox" id="noteChk" ${S.noteChecked ? 'checked' : ''}><span>なぜこう変えたかを、GitHub のプルリクエスト（変更の説明書き）に書いておく<br><span style="color:var(--muted);font-size:13px">書いても時間は増えない</span></span></label>`;
+
+  // ===== 画面ごとの中身 =====
+  const SCENES = {
+    intro() {
+      return {
+        html: `<h2 class="scene-title">依頼が来た</h2>
+          ${say('PM', '社内イベントの参加申込フォームを作ってほしい。<strong>名前とメールを入れて保存するだけ</strong>でいいよ。簡単でしょ？')}
+          <p style="margin:0">あなたは開発の担当者。まずは直感で、<strong>何日でできそう？</strong></p>
+          <div class="est">${[1, 2, 3, 5].map((d, i) => choice(i, d + '日')).join('')}</div>`,
+        on(i) { S.estimate = [1, 2, 3, 5][i]; S.scene = 'hearing'; }
+      };
+    },
+    hearing() {
+      return {
+        html: `<h2 class="scene-title">作る前に</h2>
+          ${say('PM', `${S.estimate}日くらいね。じゃあよろしく。`)}
+          <p style="margin:0">作り始める前に、総務・人事・海外支社・情報システム部に、使い方を聞いて回ることもできる。</p>
+          <div class="choices">
+            ${choice(0, 'すぐ作り始める', '言われたことはもう分かっている。', 0)}
+            ${choice(1, '関係者に話を聞いて回る', '4つの部署に、どう使うつもりかを聞く。', HEAR_H)}
+          </div>`,
+        on(i) { if (i === 1) { S.heard = true; addDays(HEAR_H); } S.scene = 'design'; S.dIdx = 0; }
+      };
+    },
+    design() {
+      const q = DESIGN[S.dIdx];
+      return {
+        html: `<h2 class="scene-title">作り方を決める（${S.dIdx + 1}/${DESIGN.length}）</h2>
+          ${say('あなた', q.q, 'dev')}
+          <div class="choices">
+            ${choice(0, q.a.t, q.a.d, q.a.h)}
+            ${choice(1, q.b.t, q.b.d, q.b.h, { hint: S.heard ? '話を聞いたとき: ' + q.hint : '' })}
+          </div>
+          ${S.heard ? '' : '<p class="tool-tip">話を聞いていないので、どちらが要るかは分からない。</p>'}`,
+        on(i) {
+          S.design[q.key] = i === 0 ? 'a' : 'b';
+          addDays(i === 0 ? q.a.h : q.b.h);
+          S.dIdx++;
+          if (S.dIdx >= DESIGN.length) S.scene = 'prep';
+        }
+      };
+    },
+    prep() {
+      const items = PREP.map((p) => `<label class="prep"><input type="checkbox" data-prep="${p.key}" ${S.prep[p.key] ? 'checked' : ''}><span class="t">${esc(p.t)}</span><span class="cost">+${fmtH(p.h)}</span><span class="d">${esc(p.d)} コードが ${lines(p.lines)} 増える。</span>${S.heard ? `<span class="hint">${esc(p.hint)}</span>` : ''}</label>`).join('');
+      return {
+        html: `<h2 class="scene-title">先回りして準備する？</h2>
+          ${say('あなた', 'まだ誰にも頼まれていないけど、<strong>後から聞かれそうなこと</strong>を先に作っておくこともできる。', 'dev')}
+          <p class="tool-tip"><b>予想のコツ。</b>社内のシステムで後から聞かれやすいのは「何か起きたら調べられる？」「ほかのシステムとつなげる？」の2つ。${S.heard ? '' : '話を聞いていないので、どれが当たるかは予想するしかない。'}ただし、使われない準備は時間のむだになり、コードも増える。</p>
+          <div class="choices">${items}</div>
+          <div class="total"><span>選んだ準備の合計</span><b id="prepTotal">0時間</b></div>
+          <div class="choices">${choice(0, 'この準備で進める')}</div>`,
+        after() {
+          const upd = () => {
+            const sum = [...document.querySelectorAll('#story input[data-prep]')].filter((x) => x.checked).reduce((s, x) => s + PREP.find((p) => p.key === x.dataset.prep).h, 0);
+            $('prepTotal').textContent = fmtH(sum);
+          };
+          document.querySelectorAll('#story input[data-prep]').forEach((x) => x.addEventListener('change', upd));
+          upd();
+        },
+        on() {
+          S.prep = {};
+          document.querySelectorAll('#story input[data-prep]').forEach((x) => { if (x.checked) S.prep[x.dataset.prep] = true; });
+          addDays(PREP.filter((p) => S.prep[p.key]).reduce((s, p) => s + p.h, 0));
+          S.promiseDraft = Math.max(S.estimate * 8, Math.ceil((S.day + BUILD.h) / 4) * 4);
+          S.scene = 'promise';
+        }
+      };
+    },
+    promise() {
+      return {
+        html: `<h2 class="scene-title">PMに日数を伝える</h2>
+          ${say('PM', 'で、結局何日もらえばいい？')}
+          <p style="margin:0">ここまでで決まった作業は <strong>${fmtH(S.day + BUILD.h)}</strong>。話を聞く・作り方・先回りの準備・初版の分が入っている。後から来そうな要望の分も見込んで、何日もらうかを決めよう。</p>
+          <p class="tool-tip">もらいすぎるとPMは困る。足りないと約束を破ることになる。どちらも点数が下がる。</p>
+          <div class="stepper">
+            <button class="btn ghost sm" type="button" data-step="-8">−1日</button>
+            <button class="btn ghost sm" type="button" data-step="-4">−0.5日</button>
+            <span class="num" id="promiseNum"></span>
+            <button class="btn ghost sm" type="button" data-step="4">+0.5日</button>
+            <button class="btn ghost sm" type="button" data-step="8">+1日</button>
+          </div>
+          <div class="choices">${choice(0, 'この日数で伝える')}</div>`,
+        after() {
+          const show = () => { $('promiseNum').innerHTML = `${(S.promiseDraft / 8).toFixed(1)}日<small>${fmtH(S.promiseDraft)}</small>`; };
+          document.querySelectorAll('#story [data-step]').forEach((b) => b.addEventListener('click', () => {
+            S.promiseDraft = Math.max(8, Math.min(240, S.promiseDraft + Number(b.dataset.step)));
+            show();
+          }));
+          show();
+        },
+        on() { S.promise = S.promiseDraft; S.scene = 'build'; }
+      };
+    },
+    build() {
+      const more = S.promise > S.estimate * 8;
+      return {
+        html: `<h2 class="scene-title">初版を作る</h2>
+          ${more ? say('PM', `えっ、最初は${S.estimate}日って言ってたよね？……でも、後から来そうな話を聞いて納得した。<strong>${fmtD(S.promise)}</strong>でいこう。`)
+                 : say('PM', `了解、<strong>${fmtD(S.promise)}</strong>ね！`)}
+          <div class="choices">${choice(0, '初版を作って公開する', '名前とメールを入れて保存し、確定メールを送るフォーム。準備したものも一緒に作る。', BUILD.h)}</div>`,
+        on() {
+          addDays(BUILD.h);
+          S.code += BUILD.lines + DESIGN.reduce((s, q) => s + (S.design[q.key] === 'b' ? q.b.lines : 0), 0) + PREP.reduce((s, p) => s + (S.prep[p.key] ? p.lines : 0), 0);
+          const v = card('v1'); v.col = 'done'; v.days = S.day;
+          S.dirty = true; S.scene = 'board';
+          addCard('c1'); addCard('c2');
+          S.boardMsg = say('PM', `初版ができて公開したよ。ここまで ${fmtD(S.day)}。使った人から要望が<strong>2つ</strong>届いたので、Kanban の「やること」に貼っておいた。`)
+            + '<p class="tool-tip"><b>Git の出番。</b>右の「今の状態を保存する」を押すと、この動く版をあとで呼び戻せるようになる。押すかどうかは自由。</p>';
+        }
+      };
+    },
+    board() {
+      const todo = S.cards.filter((c) => c.col === 'todo');
+      return {
+        html: `<h2 class="scene-title">次はどれに取りかかる？</h2>
+          ${S.boardMsg || ''}
+          <p class="tool-tip"><b>Kanban の出番。</b>要望は1枚ずつカードになって「やること」に並ぶ。PMは板を見れば、何が待っていて、何にどれだけ時間がかかったかが分かる。</p>
+          <div class="choices">${todo.map((c, i) => choice(i, `${CARDS[c.id].no} ${CARDS[c.id].title}`, `${CARDS[c.id].from}より`)).join('')}</div>`,
+        on(i) { const c = todo[i]; c.col = 'doing'; S.current = c.id; S.noteChecked = false; S.scene = c.id === 'c5' ? 'c5' : 'card'; }
+      };
+    },
+    card() {
+      const def = CARDS[S.current];
+      const good = def.dep ? S.design[def.dep] === 'b' : !!S.prep[def.prep];
+      const t = good ? def.good : def.bad, rework = !good;
+      const base = stepsH(t), check = checkH(t.touch, S.code), p = bugRate(t.touch, S.code);
+      const opts = check > 0
+        ? choice(0, rework ? '影響を確かめてから作り直す' : '影響を確かめてから直す', '今あるコードを一通り確かめる。', rangeLabel(base + check, t.ext))
+          + choice(1, rework ? '確かめずに、なんとなく作り直す' : '確かめずに、なんとなく直す', `不具合が出る確率 約${Math.round(p * 100)}%。コードが多いほど上がる。`, rangeLabel(base, t.ext))
+        : choice(0, '直す', '', rangeLabel(base, t.ext));
+      return {
+        html: `<h2 class="scene-title">${def.no} ${esc(def.title)}</h2>
+          ${say(def.from, esc(def.say))}
+          <div class="result-box ${rework ? 'bad' : (base + check <= 2 ? 'good' : 'bad')}">${rework ? '<strong>作り直しになる。</strong> ' : ''}${esc(t.text)}</div>
+          ${chips(t)}
+          ${breakdown(t, check)}
+          ${noteBox()}
+          <div class="choices">${opts}</div>`,
+        on(i) {
+          const c = card(S.current);
+          const ext = rollExt(t.ext);
+          const skip = check > 0 && i === 1;
+          const h = base + ext + (skip ? 0 : check);
+          c.days += h; c.rework = rework; c.note = S.noteChecked; addDays(h);
+          if (!skip) S.checkTotal += check;
+          S.code += t.lines; S.dirty = true;
+          S.lastMsg = t.ext ? `${def.no}は「${t.ext[0]}」に ${fmtH(ext)} かかった（予想は ${num(t.ext[1])}〜${fmtH(t.ext[2])}）。` : '';
+          if (skip) {
+            S.skips++;
+            if (Math.random() < p) { S.bugs++; S.pendingBreak = { touch: t.touch }; S.scene = 'broken'; return; }
+            S.lastMsg += '確かめずに直したけど、今回は不具合が出なかった。運が良かった。';
+          }
+          finishCard();
+        }
+      };
+    },
+    broken() {
+      const save = lastSave(), has = !!save;
+      const redo = 1 + checkH(S.pendingBreak.touch, S.code);
+      const hunt = r05(S.code / 100);
+      return {
+        html: `<h2 class="scene-title">不具合が出た！</h2>
+          ${say('!', '<strong>確かめずに直したら、今までの申込データが画面に出なくなった。</strong>どこを触ったせいなのか、すぐには分からない。', 'warn')}
+          <p class="tool-tip"><b>Git の出番。</b>前に保存した版があれば、そこまで戻して、今度は確かめながらやり直せる。</p>
+          <div class="choices">
+            ${choice(0, '保存した版に戻して、確かめながらやり直す', has ? `「${esc(save.label)}」の時点に戻す（1時間）＋影響を確かめる（${fmtH(redo - 1)}）。` : '保存した版がないので選べない。', redo, { disabled: !has })}
+            ${choice(1, '壊れたところを手で探して直す', `今ある ${lines(S.code)} の中から、原因を1行ずつ探す。`, hunt)}
+          </div>`,
+        on(i) {
+          const h = i === 0 ? redo : hunt;
+          if (i === 0) S.reverted++; else S.manualFix++;
+          addDays(h); card(S.current).days += h; S.pendingBreak = null;
+          S.lastMsg += i === 0 ? '保存した版に戻して、やり直した。' : '原因を探すのに時間がかかった。';
+          finishCard();
+        }
+      };
+    },
+    c5() {
+      const def = CARDS.c5;
+      return {
+        html: `<h2 class="scene-title">${def.no} ${esc(def.title)}</h2>
+          ${say('PM', esc(def.say))}
+          ${say('あなた', '……これは、そもそも<strong>できるかどうか分からない</strong>。', 'dev')}
+          <p class="tool-tip"><b>Git の branch の出番。</b>本体とは別の作業場所を作れば、試して失敗しても捨てるだけで済む。</p>
+          ${noteBox()}
+          <div class="choices">
+            ${choice(0, '本体でそのまま作り始める', '動いているフォームに直接、顔写真の機能を足していく。', rangeLabel(stepsH(def.main), def.main.ext))}
+            ${choice(1, '別の作業場所（branch）で小さく試す', '本体はそのまま。できるかどうかを先に見極める。', rangeLabel(stepsH(def.branch), def.branch.ext))}
+          </div>
+          <p class="label" style="margin:0">本体で作る場合の内訳</p>
+          ${breakdown(def.main, 0)}`,
+        on(i) {
+          const c = card('c5'); c.note = S.noteChecked;
+          const t = i === 0 ? def.main : def.branch;
+          const h = stepsH(t) + rollExt(t.ext);
+          addDays(h); c.days += h;
+          if (i === 0) { S.c5way = 'main'; c.rework = true; S.code += def.main.lines; S.dirty = true; S.scene = 'c5main'; }
+          else { S.c5way = 'branch'; S.commits.push({ label: `${def.no} 顔写真を試す`, branch: true, gone: true }); S.scene = 'c5end'; }
+        }
+      };
+    },
+    c5main() {
+      const save = lastSave(), has = !!save;
+      const hunt = r05(S.code / 80);
+      return {
+        html: `<h2 class="scene-title">やってみた結果</h2>
+          ${say('!', '<strong>写真の向きや明るさで、本人かどうかを見分けられない。</strong>今の道具とデータでは無理そう。しかも本体のフォームに、顔写真の部品が500行も混ざった。', 'warn')}
+          <div class="choices">
+            ${choice(0, '保存した版に戻す', has ? `「${esc(save.label)}」の時点に戻る。` : '保存した版がないので選べない。', 2, { disabled: !has })}
+            ${choice(1, '足した部品を手で取り除く', `今ある ${lines(S.code)} の中から、足した部分を探して外す。`, hunt)}
+          </div>`,
+        on(i) {
+          const h = i === 0 ? 2 : hunt;
+          if (i === 0) S.reverted++; else S.manualFix++;
+          S.code -= CARDS.c5.main.lines;
+          addDays(h); card('c5').days += h; S.scene = 'c5end';
+        }
+      };
+    },
+    c5end() {
+      const branch = S.c5way === 'branch';
+      return {
+        html: `<h2 class="scene-title">PMに報告する</h2>
+          ${branch ? say('あなた', '別の場所で試したけど、顔写真での本人確認は難しいと分かった。本体は無傷だよ。試した分は捨てた。', 'dev')
+                   : say('あなた', 'やってみたけど、顔写真での本人確認はできなかった。本体を元に戻すのにも時間がかかった。', 'dev')}
+          ${say('PM', 'えっ、名前の欄と同じくらいだと思ってた……。じゃあ、<strong>当日は受付で社員証を見る</strong>ことにしよう。')}
+          <p class="tool-tip">簡単そうに見えることと、実は今の技術では難しいことは、見た目では区別がつかない。</p>
+          <div class="choices">${choice(0, 'カードを「完了」に動かす')}</div>`,
+        on() { S.lastMsg = ''; finishCard(); }
+      };
+    },
+    review() {
+      const missing = S.cards.filter((c) => c.id !== 'v1' && !c.note);
+      return {
+        html: `<h2 class="scene-title">3か月後</h2>
+          ${say('PM', '新しく来た人が聞いてるよ。「なんで申込に番号を振ってるの？取り消しはなんで消さずに印なの？」')}
+          ${missing.length === 0
+            ? `<div class="result-box good"><strong>全部、プルリクエストに理由を書いてあった。</strong>リンクを渡すだけで答えられる。</div>`
+            : `<div class="result-box bad">理由を書いていなかった変更が <strong>${missing.length}件</strong> ある。${missing.map((c) => CARDS[c.id].no).join('')} について、当時のチャットや記憶をたどって調べ直す（1件2時間）。</div>`}
+          <p class="tool-tip"><b>GitHub の出番。</b>コードは「何を変えたか」しか教えてくれない。「なぜ変えたか」は、Issue やプルリクエストに書かないと残らない。</p>
+          <div class="choices">${choice(0, missing.length ? '調べ直して答える' : '答える', '', missing.length * 2)}</div>`,
+        on() { S.deliver = S.day; S.missing = missing.length; S.reviewCost = missing.length * 2; addDays(S.reviewCost); S.scene = 'result'; }
+      };
+    },
+    result() {
+      const over = (S.deliver - S.promise) / 8;
+      const ptPromise = Math.round(over > 0 ? Math.max(0, 40 - 8 * over) : Math.max(10, 40 - 3 * -over));
+      const ptSpeed = Math.round(Math.max(0, Math.min(40, 40 - 4 * Math.max(0, (S.deliver - IDEAL) / 8))));
+      const ptNote = Math.round(Math.max(0, 20 - 2.5 * S.missing));
+      const total = ptPromise + ptSpeed + ptNote;
+      const rank = total >= 90 ? 'S' : total >= 75 ? 'A' : total >= 55 ? 'B' : 'C';
+      const rows = S.cards.map((c) => `<tr><td>${c.id === 'v1' ? '話を聞く・作り方・先回りの準備・初版' : CARDS[c.id].no + ' ' + esc(CARDS[c.id].title)}${c.rework ? ' <span style="color:var(--bad);font-weight:700">作り直し</span>' : ''}</td><td class="num">${fmtH(c.days)}</td></tr>`).join('')
+        + (S.reviewCost ? `<tr><td>3か月後に理由を調べ直した</td><td class="num">${fmtH(S.reviewCost)}</td></tr>` : '');
+      const prepRows = PREP.map((p) => {
+        const did = !!S.prep[p.key], asked = !!p.card;
+        let res;
+        if (did && asked) res = `当たり。${CARDS[p.card].no}が ${fmtH(card(p.card).days)} で済んだ`;
+        else if (did) res = `外れ。${fmtH(p.h)} とコード ${lines(p.lines)} がむだになった`;
+        else if (asked) res = `${CARDS[p.card].no}で後から作った（${fmtH(card(p.card).days)}）`;
+        else res = '作らなくて正解';
+        return `<tr><td>${esc(p.t)}</td><td class="mark ${did ? 'o' : 'x'}">${did ? '○' : '×'}</td><td class="mark ${asked ? 'o' : 'x'}">${asked ? '○' : '×'}</td><td>${res}</td></tr>`;
+      }).join('');
+      const hits = PREP.filter((p) => S.prep[p.key] && p.card).length;
+      const misses = PREP.filter((p) => S.prep[p.key] && !p.card).length;
+      const reworks = S.cards.filter((c) => c.rework && c.id !== 'c5');
+      const asks = Object.values(CARDS).filter((d) => d.ask).map((d) => `<li>${esc(d.ask)}</li>`).join('');
+      const lessons = [
+        ['できるか分からないものがある', S.c5way === 'heard'
+          ? '話を聞いた段階で、顔写真の確認は難しそうだと分かった。社員証を見る運用に決まったので、試す時間もかからなかった。'
+          : `${CARDS.c5.no}は作ってみるまで、できるかどうか分からなかった。${S.c5way === 'branch' ? '別の作業場所で試したので、本体は無事だった。' : '本体で試したので、戻すのにも時間がかかった。'}`],
+        ['なんとなく作ると、後で時間がかかる', reworks.length
+          ? `${reworks.map((c) => CARDS[c.id].no).join('')}は作り直しになった。作る前に聞いて決めていれば、どれも短く済んだ。`
+          : '作り直しは1つもなかった。作る前に決めておいたおかげ。'],
+        ['コードが増えるほど、直すのが重くなる', `最後はコードが ${lines(S.code)} になった。${S.checkTotal ? `影響を確かめるだけで合計 ${fmtH(S.checkTotal)} かかった。` : '影響は一度も確かめなかった。'}${S.skips ? `確かめずに直したのは${S.skips}回で、そのうち${S.bugs}回は不具合が出た。` : ''}${S.prep.app || S.prep.en ? '使われなかった準備のコードも、確かめる量を増やした。' : ''}`],
+        ['先回りは、当たれば得で、外れれば損', `${hits + misses ? `準備が当たったのは${hits}個、外れたのは${misses}個。` : `先回りの準備はしなかった。${CARDS.c6.no}${CARDS.c7.no}は後から作って、合計 ${fmtH(['c6', 'c7'].reduce((s, id) => s + card(id).days, 0))} かかった。`}外部システムの確認のように、準備しても省けない時間もある。`],
+        ['大企業が、決めるのに時間をかける理由', `${S.heard ? '最初に話を聞いたので、何を準備すればいいかが分かった。' : '話を聞かなかったので、何を準備するかは勘で選ぶしかなかった。'}`],
+        ['Kanban・Git・GitHub が要る理由', ['Kanban の板には、どのカードに何時間かかったかが残った。',
+          S.reverted ? `Git で保存した版に ${S.reverted}回 戻せた。` : (S.manualFix ? `保存した版がなかったので、${S.manualFix}回 手で原因を探した。` : ''),
+          S.reviewCost ? `理由を書かなかった変更を、3か月後に調べ直した（${fmtH(S.reviewCost)}）。` : 'プルリクエストに理由を書いたので、3か月後の質問にすぐ答えられた。'].join('')]
+      ].map(([b, s]) => `<li><b>${b}</b><span>${s}</span></li>`).join('');
+      return {
+        html: `<h2 class="scene-title">結果</h2>
+          <div class="score"><span class="pts">${total}点</span><span class="rank">${rank}</span></div>
+          <div class="big">
+            <span><span class="u">直感の予想</span><br><span class="n">${S.estimate}日</span></span>
+            <span><span class="u">約束した日数</span><br><span class="n">${fmtD(S.promise)}</span></span>
+            <span><span class="u">実際</span><br><span class="n ${S.deliver > S.promise ? 'bad' : ''}">${fmtD(S.deliver)}</span></span>
+          </div>
+          <div class="tbl"><table><thead><tr><th>点数の内訳</th><th style="text-align:right">点</th></tr></thead><tbody>
+            <tr><td>約束を守れたか（約束 ${both(S.promise)}、実際 ${both(S.deliver)}）</td><td class="num">${ptPromise} / 40</td></tr>
+            <tr><td>速さ（一番うまくいったときの目安は ${both(IDEAL)}）</td><td class="num">${ptSpeed} / 40</td></tr>
+            <tr><td>3か月後に、変えた理由を説明できたか</td><td class="num">${ptNote} / 20</td></tr>
+          </tbody></table></div>
+          <p class="label" style="margin-top:6px">先回りの準備の答え合わせ</p>
+          <div class="tbl"><table><thead><tr><th>準備</th><th>準備した</th><th>頼まれた</th><th>結果</th></tr></thead><tbody>${prepRows}</tbody></table></div>
+          <p class="label" style="margin-top:6px">どこに時間がかかったか</p>
+          <div class="tbl"><table><tbody>${rows}</tbody></table></div>
+          <p class="label" style="margin-top:6px">このゲームで起きたこと</p>
+          <ul class="lessons">${lessons}</ul>
+          <p class="label" style="margin-top:6px">最初に聞けばよかった質問</p>
+          <ul class="qs">${asks}</ul>
+          <div class="choices">${choice(0, 'クリア後の話へ進む', '作りを大きく変えないといけない問題が1件来る。')}</div>
+          <div class="row"><button class="btn ghost" type="button" id="againBtn">もう一度遊ぶ</button><span style="color:var(--muted);font-size:13px">次は別の選び方を試してみよう</span></div>`,
+        on() { S.scene = 'after'; }
+      };
+    },
+    // クリア後。作ってみて初めて分かった作りの問題を、リファクタリングで直す
+    after() {
+      return {
+        html: `<h2 class="scene-title">クリア後：作りを大きく変える問題</h2>
+          ${say('人事', '来月の新人研修の申込にも、このフォームを使いたい。締切もメールの文面も違うけど、すぐできるよね？')}
+          ${say('あなた', 'コードを開いてみたら、申込を受けてからの処理が、入口ごとにばらばらに書いてあった。社内イベントの締切や文面も、あちこちに直接書き込んである。', 'dev')}
+          <div class="result-box bad">このままだと、研修用にまるごとコピーするしかない。コピーすると、直すたびに2か所を直すことになる。</div>
+          ${archBefore()}
+          <p class="tool-tip">作って使ってみて初めて、「処理の順番ごとに1か所にまとめる作り」にすべきだったと分かった。画面や動きは変えずに、中の作りだけを直すことを<b>リファクタリング</b>と呼ぶ。</p>
+          <p class="label" style="margin:0">作り全般を直す場合の内訳</p>
+          ${breakdown(REFACTOR, checkH('rework', S.code))}
+          <div class="choices">${choice(0, '作り全般を直す（リファクタリング）', '処理を順番ごとに1か所にまとめ、イベントごとに違う値を設定に分ける。', refactorH())}</div>`,
+        on() { S.scene = 'afterDone'; }
+      };
+    },
+    afterDone() {
+      return {
+        html: `<h2 class="scene-title">作り全般を直した</h2>
+          <div class="arch-pair">${archBefore()}${archAfter()}</div>
+          <div class="result-box good">新人研修の申込は、設定を1つ足すだけで、${fmtH(REFACTOR.addH)}でできた。画面と動きは前と同じまま。直すのには ${fmtH(refactorH())} かかった。</div>
+          <p class="tool-tip">作りの良し悪しは、作って使われてから分かることが多い。大きな変更が来たら、継ぎ足しで乗り切る前に、作りを直してから足す。</p>
+          <div class="row"><button class="btn" type="button" id="againBtn">もう一度遊ぶ</button></div>`,
+        on() {}
+      };
+    }
+  };
+
+  // やることが空になったら、次の要望を貼る
+  function nextWave() {
+    if (!card('c5')) {
+      if (S.heard) {
+        addCard('c5', { col: 'done', note: true }); S.c5way = 'heard';
+        return say('PM', `${CARDS.c5.no}の顔写真の件は、最初に話を聞いたときに難しそうと分かったから、受付で社員証を見ることにしてあるよ。`) + nextWave();
+      }
+      addCard('c5');
+      return say('PM', `もう1つ要望！<strong>${CARDS.c5.no}</strong>を貼っておいたよ。`);
+    }
+    if (!card('c6')) { addCard('c6'); return say('PM', `イベントが近づいてきた。<strong>${CARDS.c6.no}</strong>が来てるよ。`); }
+    if (!card('c7')) { addCard('c7'); return say('総務', `イベントは無事に終わった！来年に向けて<strong>${CARDS.c7.no}</strong>をお願い。`); }
+    return '';
+  }
+
+  function finishCard() {
+    card(S.current).col = 'done'; S.current = null;
+    let msg = S.lastMsg ? `<div class="result-box">${S.lastMsg}</div>` : '';
+    S.lastMsg = '';
+    if (!S.cards.some((x) => x.col === 'todo')) msg += nextWave();
+    S.boardMsg = msg;
+    S.scene = S.cards.some((x) => x.col !== 'done') ? 'board' : 'review';
+  }
+
+  // ===== 描画 =====
+  let handler = null;
+  function render() {
+    const sc = SCENES[S.scene]();
+    handler = sc.on;
+    $('story').innerHTML = sc.html;
+    $('story').querySelectorAll('.choice').forEach((b) => b.addEventListener('click', () => {
+      const chk = $('noteChk'); if (chk) S.noteChecked = chk.checked;
+      handler(Number(b.dataset.i)); render();
+      $('story').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }));
+    const again = $('againBtn'); if (again) again.addEventListener('click', () => { S = fresh(); render(); });
+    const chk = $('noteChk'); if (chk) chk.addEventListener('change', () => { S.noteChecked = chk.checked; });
+    if (sc.after) sc.after();
+    renderClock(); renderBoard(); renderGit(); renderForm();
+    S.fresh = {};
+  }
+  function renderClock() {
+    $('dayNum').textContent = both(S.day);
+    const target = S.promise != null ? S.promise : (S.estimate ? S.estimate * 8 : null);
+    $('estLabel').textContent = S.promise != null ? '約束した日数' : 'あなたの予想';
+    $('estNum').textContent = target != null ? fmtD(target) : '―';
+    const max = Math.max(S.day, target || 8, IDEAL) * 1.1;
+    const f = $('barFill'); f.style.width = (S.day / max * 100) + '%';
+    f.classList.toggle('over', target != null && S.day > target);
+    const m = $('barMark'); m.hidden = target == null; if (target != null) m.style.left = (target / max * 100) + '%';
+  }
+  function renderBoard() {
+    const cols = [['todo', 'やること'], ['doing', '作業中'], ['done', '完了']];
+    $('board').innerHTML = cols.map(([k, name]) => {
+      const list = S.cards.filter((c) => c.col === k);
+      const items = list.map((c) => {
+        const d = CARDS[c.id];
+        const clickable = k === 'todo' && S.scene === 'board';
+        const tag = clickable ? 'button type="button"' : 'div';
+        const end = clickable ? 'button' : 'div';
+        return `<${tag} class="kcard ${c.rework ? 'rework' : ''} ${S.fresh[c.id] ? 'new' : ''}" data-id="${c.id}"><span class="no">#${issueNo(c.id)} ${d.no}</span>${esc(d.title)}${c.days ? `<span class="days">${fmtH(c.days)}</span>` : ''}</${end}>`;
+      }).join('');
+      return `<div class="col"><h3><span>${name}</span><span>${list.length}</span></h3>${items}</div>`;
+    }).join('');
+    $('board').querySelectorAll('button.kcard').forEach((b) => b.addEventListener('click', () => {
+      const todo = S.cards.filter((c) => c.col === 'todo');
+      const i = todo.findIndex((c) => c.id === b.dataset.id);
+      if (i >= 0 && handler) { handler(i); render(); }
+    }));
+  }
+  function renderGit() {
+    $('gitState').innerHTML = S.dirty ? '<span class="dirty">保存していない変更あり</span>' : (S.commits.length ? '<span class="clean">保存済み</span>' : '<span class="clean" style="color:var(--muted)">まだ何も作っていない</span>');
+    $('commitBtn').disabled = !S.dirty;
+    $('codeSize').textContent = lines(S.code);
+    $('gitLog').innerHTML = S.commits.length
+      ? S.commits.slice().reverse().map((c) => `<div class="${c.branch ? 'branch' : ''}"><span class="dot"></span><span class="${c.gone ? 'gone' : ''}">${esc(c.label)}${c.branch ? '（branch・捨てた）' : ''}</span></div>`).join('')
+      : '<div class="empty">保存した版はまだない</div>';
+  }
+  $('commitBtn').addEventListener('click', () => {
+    const done = S.cards.filter((c) => c.col === 'done' || c.col === 'doing');
+    const last = done[done.length - 1];
+    const label = last ? `${CARDS[last.id].no} ${CARDS[last.id].title}` : '作業中';
+    S.commits.push({ label: label + 'まで' });
+    S.dirty = false; renderGit();
+  });
+  function renderForm() {
+    const d = S.design, p = S.prep, done = (id) => card(id) && card(id).col === 'done';
+    if (!done('v1')) { $('form').innerHTML = '<div style="color:var(--muted)">まだ作っていない</div>'; return; }
+    const f = (label, box, tag) => `<div class="f"><span>${label}</span><span class="box">${box}${tag ? ` <span class="tag">${tag}</span>` : ''}</span></div>`;
+    $('form').innerHTML = [
+      d.q1 === 'b' || done('c1') ? f('申込番号', 'A-0042', '自動') : '',
+      f('名前', '田中 誠'),
+      f('メール', 'tanaka@example.com'),
+      done('c7') ? f('名簿から', '[ 社員名簿から入力 ]') : (p.api ? f('名簿から', '（つなぐ入口だけある）') : ''),
+      f('確定メール', '申し込むと届く'),
+      d.q2 === 'b' || done('c2') ? f('取り消し', '[ 取り消す ]') : '',
+      done('c5') ? f('本人確認', '当日、受付で社員証を見る') : '',
+      p.log || done('c6') ? f('管理者画面', 'ログイン ／ ログ一覧') : '',
+      p.app ? f('アプリ', 'iPhone ／ Android') : '',
+      p.en ? f('言語', '日本語 ／ English') : ''
+    ].join('');
+  }
+
+  // ===== セーブ（JSONで保存・読み込み） =====
+  const SAVE_ID = 'form-dev-game';
+  const SAVE_VER = 3;   // カードの並びを変えたら上げる
+  const saveJson = () => JSON.stringify({ game: SAVE_ID, version: SAVE_VER, savedAt: new Date().toISOString(), state: S });
+  function saveMsg(text, kind) { const m = $('saveMsg'); m.textContent = text; m.className = 'save-msg ' + (kind || ''); }
+  function loadJson(text) {
+    let data;
+    try { data = JSON.parse(text); } catch (e) { saveMsg('JSONとして読めなかった。コピーし損ねていないか確かめてね。', 'err'); return; }
+    if (!data || data.game !== SAVE_ID || !data.state || !SCENES[data.state.scene]) { saveMsg('このゲームのセーブデータではないみたい。', 'err'); return; }
+    if (data.version !== SAVE_VER) { saveMsg('ゲームの中身が変わる前のセーブデータなので、読み込めない。', 'err'); return; }
+    S = Object.assign(fresh(), data.state, { fresh: {} });
+    render();
+    const at = data.savedAt ? new Date(data.savedAt).toLocaleString('ja-JP') : '';
+    saveMsg(`${at ? at + ' の' : ''}セーブデータから再開した。`, 'ok');
+    $('story').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  $('saveFileBtn').addEventListener('click', () => {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, '0');
+    const name = `form-dev-game-save-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
+    const url = URL.createObjectURL(new Blob([saveJson()], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    saveMsg(`「${name}」に保存した。`, 'ok');
+  });
+  $('loadFileBtn').addEventListener('click', () => $('loadFile').click());
+  $('loadFile').addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => loadJson(String(reader.result));
+    reader.onerror = () => saveMsg('ファイルを読めなかった。', 'err');
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+  $('copyJsonBtn').addEventListener('click', () => {
+    const t = $('saveText');
+    t.value = saveJson();
+    const fallback = () => { t.focus(); t.select(); saveMsg('下の欄に出した。選択されているので、そのままコピーしてね。'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t.value).then(() => saveMsg('コピーした。下の欄にも出してある。', 'ok'), fallback);
+    } else fallback();
+  });
+  $('pasteJsonBtn').addEventListener('click', () => {
+    const text = $('saveText').value.trim();
+    if (!text) { saveMsg('下の欄にセーブデータのJSONを貼り付けてね。', 'err'); return; }
+    loadJson(text);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
