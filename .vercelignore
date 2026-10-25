@@ -1,0 +1,8 @@
+# vercel deploy で上げないもの (ビルドに要らない作業フォルダ)
+.next
+out
+.impeccable
+.claude
+.cursor
+.firebase
+Template Agenta Main

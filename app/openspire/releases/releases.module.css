@@ -1,0 +1,133 @@
+/* リリース記録のページ。読みやすさ優先で、飾りは版の見出しの Cinzel と色の点だけ */
+.versions {
+	position: sticky;
+	top: 69px;
+	z-index: 5;
+	display: flex;
+	gap: 8px;
+	margin: 0 -16px 32px;
+	padding: 10px 16px;
+	overflow-x: auto;
+	background: rgba(15, 13, 10, 0.94);
+	scrollbar-width: thin;
+	scrollbar-color: rgba(227, 182, 91, 0.4) transparent;
+}
+.versions a {
+	flex: none;
+	padding: 2px 14px;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	background: rgba(227, 182, 91, 0.06);
+	font-weight: 700;
+	font-size: 0.88rem;
+	color: var(--gold-soft);
+	text-decoration: none;
+}
+.versions a:hover {
+	background: rgba(227, 182, 91, 0.18);
+}
+
+.release {
+	scroll-margin-top: 140px;
+	padding: 0 0 36px;
+	margin-bottom: 36px;
+	border-bottom: 1px solid var(--line);
+}
+.head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 6px 14px;
+	margin-bottom: 12px;
+}
+.version {
+	margin: 0;
+	font-family: var(--font-cinzel), serif;
+	font-weight: 800;
+	font-size: 1.9rem;
+	line-height: 1.2;
+	color: var(--gold-soft);
+}
+.date {
+	font-weight: 700;
+	color: var(--text-dim);
+}
+.badge {
+	padding: 0 10px;
+	border-radius: 6px;
+	background: var(--gold);
+	font-size: 0.78rem;
+	font-weight: 800;
+	letter-spacing: 0.1em;
+	color: #1b1407;
+}
+.image {
+	display: block;
+	width: 100%;
+	height: auto;
+	margin: 4px 0 16px;
+	border-radius: 8px;
+}
+.summary p {
+	margin: 0 0 12px;
+}
+
+.group {
+	margin-top: 20px;
+}
+.group h3 {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0 0 8px;
+	font-size: 1.05rem;
+	font-weight: 800;
+	color: var(--accent);
+}
+.group h3::before {
+	content: "";
+	flex: none;
+	width: 9px;
+	height: 9px;
+	border-radius: 2px;
+	background: var(--accent);
+	transform: rotate(45deg);
+}
+.count {
+	font-size: 0.8rem;
+	font-weight: 700;
+	color: var(--text-dim);
+}
+.group ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+/* 項目ごとに区切り、行頭に欄の色の小さな点 */
+.group li {
+	position: relative;
+	padding: 9px 4px 9px 22px;
+	border-top: 1px solid rgba(236, 230, 214, 0.07);
+}
+.group li:first-child {
+	border-top: 0;
+}
+.group li::before {
+	content: "";
+	position: absolute;
+	left: 4px;
+	top: 1.15em;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--accent);
+}
+.fixes {
+	--accent: var(--fixes);
+}
+.features {
+	--accent: var(--features);
+}
+.changes {
+	--accent: var(--changes);
+}
