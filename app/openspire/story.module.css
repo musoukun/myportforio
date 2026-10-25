@@ -1,27 +1,38 @@
 /* 特設サイト (/openspire/) の見た目。物語 → 旅人 → 石壁 → 記録 の順 */
 
-/* ── 物語: 場面ごとの箱 (高さ 240vh) の中で、絵の舞台が画面に貼りつく。
-   次の場面の箱は -100vh 重ねてあるので、次の舞台は今の舞台の上に下から重なってくる (絵本をめくる) */
+/* ── 物語: 画面いっぱいの紙芝居。場面は重ねて置き、選ばれた場面 (ラジオが :checked) だけを見せる */
 .story {
 	position: relative;
-}
-.scene {
-	position: relative;
-	height: 240vh;
-	view-timeline-name: --scene;
-}
-.scene + .scene {
-	margin-top: -100vh;
-}
-.stage {
-	position: sticky;
-	top: 0;
 	height: 100vh;
 	height: 100svh;
-	overflow: hidden;
+	overflow: clip;
 	background: var(--ground);
 }
-/* 絵は舞台より 12% 横に広い。止まっているときは真ん中、動けるブラウザではゲームと同じく左から右へ流す */
+/* ラジオは見えなくするが、キーボードでは選べるまま (左右キーで場面が動く) */
+.pick {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+.slide {
+	position: absolute;
+	inset: 0;
+	overflow: clip;
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 0.7s ease-out, visibility 0s linear 0.7s;
+}
+.pick:checked + .slide {
+	z-index: 1;
+	opacity: 1;
+	visibility: visible;
+	transition: opacity 0.7s ease-out;
+}
+/* 絵は画面より 12% 横に広い。止まっているときは真ん中、場面が出るとゲームと同じく左から右へゆっくり流す */
 .plate {
 	position: absolute;
 	top: 0;
@@ -33,7 +44,7 @@
 	object-position: 50% 50%;
 	transform: translateX(-5.36%);
 }
-.stage::after {
+.slide::after {
 	content: "";
 	position: absolute;
 	inset: 0;
@@ -49,8 +60,8 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 18px;
-	padding: 34px clamp(16px, 6vw, 96px) 30px;
+	gap: 12px;
+	padding: 30px clamp(16px, 6vw, 96px) 18px;
 	background: rgba(15, 13, 10, 0.8);
 	box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.35);
 }
@@ -66,28 +77,76 @@
 	word-break: auto-phrase;
 	text-wrap: balance;
 }
+/* 目盛り。押すとその場面へ飛ぶ (見た目は細い線、押せる所は上下に広い) */
 .ticks {
 	display: flex;
-	gap: 8px;
+	gap: 4px;
 	margin: 0;
 	padding: 0;
 	list-style: none;
 }
-.ticks li {
-	width: 26px;
-	height: 3px;
-	border-radius: 2px;
-	background: rgba(227, 182, 91, 0.28);
+.ticks label {
+	display: block;
+	width: 30px;
+	height: 20px;
+	cursor: pointer;
+	background: linear-gradient(rgba(227, 182, 91, 0.28), rgba(227, 182, 91, 0.28)) 50% 50% / 26px 3px no-repeat;
 }
-.ticks li.tickOn {
-	background: var(--gold);
+.ticks label:hover {
+	background-image: linear-gradient(rgba(227, 182, 91, 0.6), rgba(227, 182, 91, 0.6));
 }
-.count,
-.skip,
-.cue {
+.ticks label.tickOn {
+	background-image: linear-gradient(var(--gold), var(--gold));
+}
+
+/* ＜ ＞ の丸いボタン。絵の左右の真ん中 (帯の分だけ上) に置く */
+.turn {
 	position: absolute;
-	bottom: clamp(190px, 24vh, 230px);
-	z-index: 2;
+	top: calc(50% - 70px);
+	z-index: 3;
+	display: grid;
+	place-items: center;
+	width: 56px;
+	height: 56px;
+	border: 1px solid rgba(227, 182, 91, 0.6);
+	border-radius: 50%;
+	background: rgba(15, 13, 10, 0.62);
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+	color: var(--gold-soft) !important;
+	cursor: pointer;
+	transition: background-color 0.2s ease-out, transform 0.2s ease-out;
+}
+.turn:hover {
+	background: rgba(64, 48, 22, 0.85);
+}
+.prev {
+	left: clamp(12px, 3vw, 40px);
+}
+.next {
+	right: clamp(12px, 3vw, 40px);
+}
+.prev:hover {
+	transform: translateX(-3px);
+}
+.next:hover {
+	transform: translateX(3px);
+}
+.turnOff {
+	opacity: 0.28;
+	cursor: default;
+	pointer-events: none;
+}
+/* ラジオにキーボードのフォーカスがあるときは、＞ に輪を出して今どこを操作しているかを見せる */
+.pick:focus-visible + .slide .next {
+	outline: 2px solid var(--gold);
+	outline-offset: 3px;
+}
+
+.count,
+.skip {
+	position: absolute;
+	bottom: clamp(170px, 22vh, 210px);
+	z-index: 3;
 	text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85);
 }
 /* 明るい絵の上でも読めるよう、数字の後ろに暗い下地を敷く */
@@ -107,6 +166,9 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
+	padding: 0 10px;
+	border-radius: 4px;
+	background: rgba(15, 13, 10, 0.62);
 	font-weight: 700;
 	font-size: 0.92rem;
 	color: #e9dec6 !important;
@@ -116,33 +178,14 @@
 	color: #fff3d4 !important;
 	text-decoration: underline;
 }
-.cue {
-	left: 50%;
-	margin-left: -11px;
-	color: var(--gold-soft);
-	filter: drop-shadow(0 1px 6px rgba(0, 0, 0, 0.8));
-}
 
-/* スクロールに合わせて動かす (対応するブラウザだけ。動きを減らす設定では動かさない) */
-@supports (animation-timeline: view()) {
-	@media (prefers-reduced-motion: no-preference) {
-		.plate {
-			animation: pan linear both;
-			animation-timeline: --scene;
-			animation-range: entry 0% exit 0%;
-		}
-		/* 次の絵は、下から暗いまま重なってきて、上まで来るあいだに明るくなる */
-		.scene + .scene .stage {
-			animation: dissolve linear both;
-			animation-timeline: --scene;
-			animation-range: entry 10% entry 90%;
-		}
-		/* 語りは、絵が出きってから左から書かれていく。最初の 1 枚は最初から読める */
-		.scene + .scene .line {
-			animation: write linear both;
-			animation-timeline: --scene;
-			animation-range: contain 0% contain 28%;
-		}
+/* 場面が出たら、絵を流し、語りを左から書いていく (動きを減らす設定では動かさない) */
+@media (prefers-reduced-motion: no-preference) {
+	.pick:checked + .slide .plate {
+		animation: pan 18s cubic-bezier(0.3, 0, 0.3, 1) both;
+	}
+	.pick:checked + .slide .line {
+		animation: write 1.6s linear 0.35s both;
 	}
 }
 @keyframes pan {
@@ -155,14 +198,6 @@
 		transform: translateX(-10.71%);
 	}
 }
-@keyframes dissolve {
-	from {
-		filter: brightness(0.3) saturate(0.6);
-	}
-	to {
-		filter: none;
-	}
-}
 @keyframes write {
 	from {
 		clip-path: inset(0 100% 0 0);
@@ -170,6 +205,45 @@
 	to {
 		clip-path: inset(0 0 0 0);
 	}
+}
+
+/* ── Trailer: 紙芝居のすぐ下に、プレイ映像を大きく */
+.trailer {
+	padding: clamp(64px, 9vw, 110px) clamp(16px, 4vw, 56px) 0;
+	text-align: center;
+}
+.trailerTitle {
+	margin: 0;
+	font-family: var(--font-cinzel), serif;
+	font-weight: 800;
+	font-size: clamp(2rem, 5vw, 3.4rem);
+	line-height: 1.2;
+	letter-spacing: 0.12em;
+	color: var(--gold-soft);
+	text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6), 0 0 22px rgba(227, 182, 91, 0.3);
+}
+.trailerText {
+	margin: 8px 0 clamp(24px, 4vw, 40px);
+	font-weight: 700;
+	color: var(--text-dim);
+}
+.video {
+	position: relative;
+	width: min(100%, 1200px);
+	margin: 0 auto;
+	aspect-ratio: 16 / 9;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	overflow: clip;
+	background: #000;
+	box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+.video iframe {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	border: 0;
 }
 
 /* ── 旅人 */
@@ -273,9 +347,33 @@
 	}
 }
 
+/* ── Special Thanks: 見出しとお礼の一文のあとに、石壁 */
+.thanksHead {
+	max-width: 760px;
+	margin: 0 auto clamp(24px, 4vw, 44px);
+	padding: 0 16px;
+	text-align: center;
+}
+.thanksTitle {
+	margin: 0;
+	font-family: var(--font-cinzel), serif;
+	font-weight: 800;
+	font-size: clamp(2rem, 5vw, 3.4rem);
+	line-height: 1.2;
+	letter-spacing: 0.12em;
+	color: var(--gold-soft);
+	text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6), 0 0 22px rgba(227, 182, 91, 0.3);
+}
+.thanksText {
+	margin: 12px 0 0;
+	font-size: clamp(1rem, 1.6vw, 1.15rem);
+	font-weight: 700;
+	color: var(--text);
+}
+
 /* ── 戦士の石壁。絵 (3:2) の真ん中の平らな碑に、名前をサイトの文字で刻む */
 .wallSection {
-	padding: clamp(24px, 3vw, 40px) 0;
+	padding: clamp(64px, 9vw, 110px) 0 clamp(24px, 3vw, 40px);
 	background: radial-gradient(ellipse 80% 60% at 50% 50%, #1b1a14, var(--ground) 75%);
 }
 .wall {
@@ -482,12 +580,20 @@
 		gap: 12px;
 		padding: 22px 16px 22px;
 	}
-	.ticks li {
-		width: 16px;
+	.ticks {
+		gap: 0;
+	}
+	.ticks label {
+		width: 22px;
+		background-size: 16px 3px;
 	}
 	.count,
-	.skip,
-	.cue {
-		bottom: 168px;
+	.skip {
+		bottom: 176px;
+	}
+	.turn {
+		top: calc(45% - 60px);
+		width: 46px;
+		height: 46px;
 	}
 }
