@@ -207,6 +207,37 @@
 	}
 }
 
+/* ── 区画へ飛ぶタグ (紙芝居のすぐ下)。細い画面では横にすべらせる */
+.tags {
+	display: flex;
+	justify-content: center;
+	gap: 10px;
+	padding: 20px clamp(16px, 4vw, 56px) 0;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+.tag {
+	flex: none;
+	padding: 4px 16px;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	background: rgba(227, 182, 91, 0.06);
+	font-weight: 700;
+	font-size: 0.95rem;
+	color: var(--gold-soft) !important;
+	text-decoration: none;
+	transition: background-color 0.2s ease-out, border-color 0.2s ease-out;
+}
+.tag:hover {
+	background: rgba(227, 182, 91, 0.18);
+	border-color: rgba(227, 182, 91, 0.6);
+}
+@media (max-width: 640px) {
+	.tags {
+		justify-content: flex-start;
+	}
+}
+
 /* ── Trailer: 紙芝居のすぐ下に、プレイ映像を大きく */
 .trailer {
 	padding: clamp(64px, 9vw, 110px) clamp(16px, 4vw, 56px) 0;

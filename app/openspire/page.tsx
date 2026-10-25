@@ -9,6 +9,15 @@ import styles from "./story.module.css";
 // トレーラーの YouTube の動画 (https://youtu.be/J3Gk2fRCrWQ)
 const TRAILER_ID = "J3Gk2fRCrWQ";
 
+// 区画へ飛ぶタグの並び (id は各 section の id)
+const SECTION_TAGS = [
+	{ id: "story", label: "物語" },
+	{ id: "trailer", label: "Trailer" },
+	{ id: "travelers", label: "旅人" },
+	{ id: "wall", label: "Special Thanks" },
+	{ id: "records", label: "記録" },
+];
+
 export const metadata: Metadata = {
 	title: { absolute: "Open Spire" },
 };
@@ -23,7 +32,7 @@ export default function OpenSpirePage() {
 			<main>
 				{/* 紙芝居: 場面ごとに見えないラジオボタンを 1 つ置き、選ばれている場面だけを見せる (JS なし)。
 				    ＜ ＞ と下の目盛りはラベルで、押すとその場面のラジオが選ばれる。ラジオにフォーカスがあれば左右キーでも動く */}
-				<section aria-label="物語" className={styles.story}>
+				<section id="story" aria-label="物語" className={styles.story}>
 					{STORY_LINES.map((line, i) => (
 						<Fragment key={line}>
 							<input
@@ -87,6 +96,15 @@ export default function OpenSpirePage() {
 					</a>
 				</section>
 
+				{/* このページの区画へ飛ぶタグ。押すとその区画までスクロールする */}
+				<nav aria-label="このページの区画" className={styles.tags}>
+					{SECTION_TAGS.map((tag) => (
+						<a key={tag.id} href={`#${tag.id}`} className={styles.tag}>
+							#{tag.label}
+						</a>
+					))}
+				</nav>
+
 				{/* プレイ映像 (YouTube)。Cookie を置かない埋め込みにし、画面に近づくまで読まない */}
 				<section id="trailer" className={styles.trailer} aria-labelledby="trailer-title">
 					<h2 id="trailer-title" className={styles.trailerTitle}>
@@ -143,7 +161,7 @@ export default function OpenSpirePage() {
 					</figure>
 				</section>
 
-				<section className={styles.records} aria-label="記録">
+				<section id="records" className={styles.records} aria-label="記録">
 					<Link href="/openspire/releases/" className={styles.record}>
 						<span className={styles.recordTitle}>リリース記録</span>
 						<span className={styles.recordText}>
