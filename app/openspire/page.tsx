@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Fragment } from "react";
-import { ArrowRight, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Github, Mail } from "lucide-react";
+import { CONTACT_LINKS, CONTACT_NOTE } from "@/lib/contact";
 import { Foot, TopBar } from "./Chrome";
 import { formatDate, HEROES, RELEASES, ROMAN, STORY_LINES, WARRIORS } from "./content";
 import styles from "./story.module.css";
@@ -16,6 +17,7 @@ const SECTION_TAGS = [
 	{ id: "travelers", label: "旅人" },
 	{ id: "wall", label: "Special Thanks" },
 	{ id: "records", label: "記録" },
+	{ id: "contact", label: "Contact" },
 ];
 
 export const metadata: Metadata = {
@@ -175,6 +177,34 @@ export default function OpenSpirePage() {
 						<span className={styles.recordText}>最初に開くときだけ要る、Mac の許可の手順。</span>
 						<ArrowRight className={styles.recordArrow} size={22} aria-hidden="true" />
 					</Link>
+				</section>
+				{/* 作者の連絡先 (ポートフォリオの Contact と同じ中身。lib/contact.ts) */}
+				<section id="contact" className={styles.contact} aria-labelledby="contact-title">
+					<h2 id="contact-title" className={styles.contactTitle}>
+						Contact
+					</h2>
+					<p className={styles.contactText}>{CONTACT_NOTE}</p>
+					<ul className={styles.contactLinks}>
+						{CONTACT_LINKS.map((link) => {
+							const Icon = link.kind === "email" ? Mail : Github;
+							const external = link.href.startsWith("http");
+							return (
+								<li key={link.kind}>
+									<a
+										href={link.href}
+										className={styles.contactLink}
+										target={external ? "_blank" : undefined}
+										rel={external ? "noopener noreferrer" : undefined}
+									>
+										<Icon className={styles.contactIcon} size={22} aria-hidden="true" />
+										<span className={styles.contactLabel}>{link.label}</span>
+										<span className={styles.contactValue}>{link.value}</span>
+										<ArrowRight className={styles.recordArrow} size={20} aria-hidden="true" />
+									</a>
+								</li>
+							);
+						})}
+					</ul>
 				</section>
 			</main>
 			<Foot />

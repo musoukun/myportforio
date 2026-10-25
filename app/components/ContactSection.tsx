@@ -3,23 +3,11 @@
 import { motion } from "motion/react";
 import { Mail, Github, ArrowRight } from "lucide-react";
 import SectionHeader from "./SectionHeader";
+import { CONTACT_LINKS, CONTACT_NOTE } from "@/lib/contact";
 
-const contactLinks = [
-  {
-    icon: Mail,
-    label: "Email",
-    value: "waroshi@gmail.com",
-    href: "mailto:waroshi@gmail.com",
-    mono: "@",
-  },
-  {
-    icon: Github,
-    label: "GitHub",
-    value: "github.com/musoukun",
-    href: "https://github.com/musoukun",
-    mono: "GH",
-  },
-];
+// 連絡先の中身は lib/contact.ts (Open Spire の特設サイトと共通)。ここでは見た目のアイコンと略号だけ足す
+const LOOKS = { email: { icon: Mail, mono: "@" }, github: { icon: Github, mono: "GH" } };
+const contactLinks = CONTACT_LINKS.map((link) => ({ ...link, ...LOOKS[link.kind] }));
 
 export default function ContactSection() {
   return (
@@ -34,7 +22,7 @@ export default function ContactSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            お問い合わせ機能は現在開発中です。ご連絡は下記メールアドレスまでお願いします。
+            {CONTACT_NOTE}
           </motion.p>
 
           <div className="space-y-3">

@@ -628,3 +628,67 @@
 		height: 46px;
 	}
 }
+
+/* ── Contact: 作者の連絡先 (いちばん下) */
+.contact {
+	max-width: 760px;
+	margin: 0 auto;
+	padding: clamp(24px, 4vw, 48px) 16px clamp(56px, 8vw, 96px);
+	text-align: center;
+}
+.contactTitle {
+	margin: 0;
+	font-family: var(--font-cinzel), serif;
+	font-weight: 800;
+	font-size: clamp(1.8rem, 4vw, 2.6rem);
+	letter-spacing: 0.12em;
+	color: var(--gold-soft);
+}
+.contactText {
+	margin: 10px 0 24px;
+	color: var(--text-dim);
+}
+.contactLinks {
+	display: grid;
+	gap: 12px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	text-align: left;
+}
+.contactLink {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 16px 56px 16px 20px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: var(--ground-2);
+	text-decoration: none;
+	transition: background-color 0.2s ease-out, border-color 0.2s ease-out;
+}
+.contactLink:hover {
+	background: #221b12;
+	border-color: rgba(227, 182, 91, 0.6);
+}
+.contactLink:hover .recordArrow {
+	transform: translateX(4px);
+}
+.contactIcon {
+	flex: none;
+	color: var(--gold);
+}
+.contactLabel {
+	flex: none;
+	width: 4.5em;
+	font-size: 0.8rem;
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	color: var(--text-dim);
+}
+.contactValue {
+	font-weight: 700;
+	color: var(--gold-soft);
+	overflow-wrap: anywhere;
+}
