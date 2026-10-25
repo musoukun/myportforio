@@ -23,13 +23,13 @@ const contactLinks = [
 
 export default function ContactSection() {
   return (
-    <section id="contact" className="py-24">
+    <section id="contact" className="relative py-24">
       <div className="max-w-6xl mx-auto px-6">
         <SectionHeader number="04" label="Contact" title="Contact" />
 
         <div className="max-w-lg">
           <motion.p
-            className="text-neutral-600 dark:text-neutral-400 leading-relaxed mb-8 text-sm"
+            className="text-night-muted leading-relaxed mb-8 text-sm"
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -48,25 +48,25 @@ export default function ContactSection() {
                     ? "noopener noreferrer"
                     : undefined
                 }
-                className="flex items-center gap-4 rounded-2xl border border-dashed border-black/5 dark:border-white/10 p-2 hover:border-brand/30 transition-all duration-300 group"
+                className="flex items-center gap-4 group block"
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 + idx * 0.1 }}
               >
-                <div className="flex-1 flex items-center gap-4 rounded-xl border border-black/5 dark:border-white/10 bg-black/2 dark:bg-white/3 p-4">
+                <div className="panel flex items-center gap-4 p-4 group-hover:border-brand/40 transition-colors">
                   <span className="w-10 h-10 bg-brand/10 text-brand flex items-center justify-center rounded-lg font-mono text-sm font-semibold">
                     {link.mono}
                   </span>
                   <div className="flex-1">
-                    <p className="text-xs text-neutral-400 uppercase tracking-wider">
+                    <p className="text-xs text-night-muted uppercase tracking-wider">
                       {link.label}
                     </p>
                     <p className="text-sm font-medium group-hover:text-brand transition-colors">
                       {link.value}
                     </p>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-neutral-300 dark:text-neutral-600 group-hover:text-brand group-hover:translate-x-1 transition-all" />
+                  <ArrowRight className="w-4 h-4 text-night-muted group-hover:text-brand group-hover:translate-x-1 transition-all" />
                 </div>
               </motion.a>
             ))}
