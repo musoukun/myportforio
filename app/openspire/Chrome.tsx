@@ -11,10 +11,13 @@ export function TopBar({ solid = false }: { solid?: boolean }) {
 			<nav aria-label="Open Spire">
 				<ul className={styles.links}>
 					<li className={styles.hideNarrow}>
+						<Link href="/openspire/#trailer">Trailer</Link>
+					</li>
+					<li className={styles.hideNarrow}>
 						<Link href="/openspire/#travelers">旅人</Link>
 					</li>
 					<li>
-						<Link href="/openspire/#wall">戦士の石壁</Link>
+						<Link href="/openspire/#wall">Special Thanks</Link>
 					</li>
 					<li>
 						<Link href="/openspire/releases/">リリース記録</Link>
