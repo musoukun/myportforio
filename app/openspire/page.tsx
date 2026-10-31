@@ -125,8 +125,8 @@ export default function OpenSpirePage() {
 					</div>
 					<p className={styles.credit}>
 						ナレーションの声:{" "}
-						<a href="https://x.com/aya_exai/status/2116159770881335723" target="_blank" rel="noopener noreferrer">
-							Ayaka
+						<a href="https://elevenlabs.io/app/sign-in?redirect=%2Fapp%2Fvoice-library%3FvoiceId%3Ddp4HJleKktOHZFHL2jQg" target="_blank" rel="noopener noreferrer">
+							Ayaka（ElevenLabs モデル）
 						</a>{" "}
 						（ご本人 X:{" "}
 						<a href="https://x.com/aya_exai" target="_blank" rel="noopener noreferrer">
