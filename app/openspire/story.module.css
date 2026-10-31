@@ -277,6 +277,17 @@
 	border: 0;
 }
 
+.credit {
+	margin: 18px 0 0;
+	font-size: 0.9rem;
+	color: var(--text-dim);
+}
+.credit a {
+	color: var(--gold-soft);
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
 /* ── 旅人 */
 .travelers {
 	position: relative;

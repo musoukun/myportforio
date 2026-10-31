@@ -123,6 +123,17 @@ export default function OpenSpirePage() {
 							allowFullScreen
 						/>
 					</div>
+					<p className={styles.credit}>
+						ナレーションの声:{" "}
+						<a href="https://x.com/aya_exai/status/2116159770881335723" target="_blank" rel="noopener noreferrer">
+							Ayaka
+						</a>{" "}
+						（ご本人 X:{" "}
+						<a href="https://x.com/aya_exai" target="_blank" rel="noopener noreferrer">
+							@aya_exai
+						</a>
+						）
+					</p>
 				</section>
 
 				<section id="travelers" className={styles.travelers} aria-labelledby="travelers-title">
