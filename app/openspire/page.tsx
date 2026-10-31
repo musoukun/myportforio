@@ -7,8 +7,8 @@ import { Foot, TopBar } from "./Chrome";
 import { formatDate, HEROES, RELEASES, ROMAN, STORY_LINES, WARRIORS } from "./content";
 import styles from "./story.module.css";
 
-// トレーラーの YouTube の動画 (https://youtu.be/IsxWFFQeaQk)
-const TRAILER_ID = "IsxWFFQeaQk";
+// トレーラーの YouTube の動画 (https://youtu.be/D5PM86u3Tto)
+const TRAILER_ID = "D5PM86u3Tto";
 
 // 区画へ飛ぶタグの並び (id は各 section の id)
 const SECTION_TAGS = [
