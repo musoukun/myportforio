@@ -548,6 +548,22 @@
 .names:has(li:nth-child(7)) .name {
 	font-size: 5cqi;
 }
+/* いちばん上の名前は、ほかより大きく、溝を深く刻む (影と光を太く重ねる) */
+.names .name:first-child {
+	grid-column: 1 / -1;
+	margin-bottom: 1.2cqi;
+	font-size: 10cqi;
+	color: #4a3008;
+	text-shadow:
+		0 -0.2cqi 0 rgba(16, 8, 0, 0.95),
+		0 -0.45cqi 0.15cqi rgba(16, 8, 0, 0.6),
+		0 -0.7cqi 0.4cqi rgba(16, 8, 0, 0.3),
+		0 0.35cqi 0 rgba(255, 244, 214, 0.9),
+		0 0.6cqi 0.45cqi rgba(255, 244, 214, 0.35);
+}
+.names:has(li:nth-child(7)) .name:first-child {
+	font-size: 7cqi;
+}
 /* 細い画面では、碑のまわりだけを大きく見せる (絵を 143% にして碑を真ん中に寄せる) */
 @media (max-width: 700px) {
 	.wall {
