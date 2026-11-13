@@ -582,6 +582,56 @@
 	}
 }
 
+/* ── 石碑の下: 意見をくれた人の紹介 (小さめの見出し) */
+.adviser {
+	max-width: 640px;
+	margin: clamp(28px, 4vw, 48px) auto 0;
+	padding: 0 16px;
+	text-align: center;
+}
+.adviserHead {
+	margin: 0;
+	font-size: 1rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	color: var(--gold-soft);
+}
+.adviserName {
+	margin: 10px 0 0;
+	font-size: 1.15rem;
+	font-weight: 800;
+	color: var(--text);
+}
+.adviserText {
+	margin: 6px 0 0;
+	font-size: 0.9rem;
+	line-height: 1.7;
+	color: var(--text-dim);
+}
+.adviserLinks {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 8px 12px;
+	margin: 14px 0 0;
+	padding: 0;
+	list-style: none;
+}
+.adviserLink {
+	display: inline-block;
+	padding: 6px 14px;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	font-size: 0.85rem;
+	color: var(--gold-soft);
+	text-decoration: none;
+	transition: border-color 0.2s ease-out, background-color 0.2s ease-out;
+}
+.adviserLink:hover {
+	border-color: rgba(227, 182, 91, 0.6);
+	background: #221b12;
+}
+
 /* ── 記録へのリンク */
 .records {
 	display: grid;

@@ -20,6 +20,13 @@ const SECTION_TAGS = [
 	{ id: "contact", label: "Contact" },
 ];
 
+// 石碑の下で紹介する、意見をくれた人 (山ちゃん) のリンク
+const ADVISER_LINKS = [
+	{ label: "X", href: "https://x.com/nekorobi_aws" },
+	{ label: "Qiita", href: "https://qiita.com/kikuziro" },
+	{ label: "登壇資料（Speaker Deck）", href: "https://speakerdeck.com/kazuma777777/" },
+];
+
 export const metadata: Metadata = {
 	title: { absolute: "Open Spire" },
 };
@@ -172,6 +179,22 @@ export default function OpenSpirePage() {
 							</ul>
 						</div>
 					</figure>
+					{/* 石碑の下: 石碑に刻んだ人の紹介 */}
+					<div className={styles.adviser}>
+						<h3 className={styles.adviserHead}>石碑の紹介</h3>
+						<p className={styles.adviserText}>ゲームの Feedback をありがとうございます</p>
+						<p className={styles.adviserName}>山ちゃん（@nekorobi_aws）</p>
+						<p className={styles.adviserText}>AWS エンジニア。2024〜2025 年 AWS All Certifications Engineers。</p>
+						<ul className={styles.adviserLinks}>
+							{ADVISER_LINKS.map((link) => (
+								<li key={link.href}>
+									<a href={link.href} className={styles.adviserLink} target="_blank" rel="noopener noreferrer">
+										{link.label}
+									</a>
+								</li>
+							))}
+						</ul>
+					</div>
 				</section>
 
 				<section id="records" className={styles.records} aria-label="記録">
