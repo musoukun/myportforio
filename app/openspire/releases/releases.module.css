@@ -131,3 +131,73 @@
 .changes {
 	--accent: var(--changes);
 }
+
+/* 主な変更のカード (openslaythe の issue #1865)。本文の幅より広げて、横に 2〜4 枚並べる */
+.highlights {
+	--wide: min(1240px, calc(100vw - 32px));
+	width: var(--wide);
+	margin: 20px calc((100% - var(--wide)) / 2) 28px;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+	gap: 16px;
+}
+.card {
+	display: flex;
+	flex-direction: column;
+	padding: 16px 16px 18px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: rgba(236, 230, 214, 0.04);
+}
+.issues {
+	margin: 0 0 6px;
+	font-weight: 800;
+	font-size: 0.85rem;
+	color: var(--gold);
+}
+.cardTitle {
+	margin: 0 0 6px;
+	font-size: 1.02rem;
+	font-weight: 800;
+	line-height: 1.5;
+	color: var(--text);
+}
+.cardDetail {
+	margin: 0 0 12px;
+	font-size: 0.88rem;
+	line-height: 1.6;
+	color: var(--text-dim);
+}
+.cardImage {
+	display: block;
+	width: 100%;
+	height: auto;
+	margin-top: auto;
+	border-radius: 6px;
+}
+.cardTable {
+	width: 100%;
+	margin-top: auto;
+	border-collapse: collapse;
+	font-size: 0.86rem;
+}
+.cardTable td {
+	padding: 9px 4px;
+	border-top: 1px solid rgba(236, 230, 214, 0.1);
+	color: var(--text-dim);
+}
+.cardTable td:last-child {
+	text-align: right;
+	font-weight: 800;
+	color: var(--text);
+	white-space: nowrap;
+}
+.cardTable tr:first-child td {
+	border-top: 0;
+}
+.cardTable td.bad {
+	color: var(--fixes);
+}
+.cardTable td.good {
+	color: var(--features);
+}

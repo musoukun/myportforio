@@ -54,6 +54,36 @@ export default function ReleasesPage() {
 							</div>
 						)}
 
+						{/* 主な変更を、項目ごとに絵の付いたカードで並べる (openslaythe の issue #1865) */}
+						{release.highlights && release.highlights.length > 0 && (
+							<div className={styles.highlights}>
+								{release.highlights.map((h) => (
+									<section key={h.title} className={styles.card}>
+										{h.issues && h.issues.length > 0 && (
+											<p className={styles.issues}>{h.issues.map((n) => `#${n}`).join(" ")}</p>
+										)}
+										<h3 className={styles.cardTitle}>{h.title}</h3>
+										{h.detail && <p className={styles.cardDetail}>{h.detail}</p>}
+										{h.image && (
+											<img className={styles.cardImage} src={`/openspire/releases/${h.image}`} alt={h.title} loading="lazy" />
+										)}
+										{h.table && (
+											<table className={styles.cardTable}>
+												<tbody>
+													{h.table.map((row) => (
+														<tr key={row.label}>
+															<td>{row.label}</td>
+															<td className={row.tone ? styles[row.tone] : undefined}>{row.value}</td>
+														</tr>
+													))}
+												</tbody>
+											</table>
+										)}
+									</section>
+								))}
+							</div>
+						)}
+
 						{/* 空の欄は見出しごと出さない */}
 						{RELEASE_GROUPS.map((group) => {
 							const items = release[group.key] ?? [];

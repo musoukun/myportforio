@@ -63,11 +63,21 @@ export const HEROES: Hero[] = [
 
 export const WARRIORS: string[] = warriorList.warriors;
 
+// 項目ごとの絵つきカード (openslaythe の issue #1865)。絵の代わりに小さな表 (前と後の比べ) を持てる
+export type ReleaseHighlight = {
+	issues?: number[];
+	title: string;
+	detail?: string;
+	image?: string;
+	table?: { label: string; value: string; tone?: string }[]; // tone は "good" (緑) か "bad" (赤)
+};
+
 export type Release = {
 	version: string;
 	date: string;
 	summary?: string;
 	image?: string;
+	highlights?: ReleaseHighlight[];
 	fixes?: string[];
 	features?: string[];
 	changes?: string[];
