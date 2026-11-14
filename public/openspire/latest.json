@@ -1,0 +1,13 @@
+{
+  "version": "0.7.2",
+  "windows": {
+    "url": "https://drive.usercontent.google.com/download?id=1hN2SY2XIGHFwHuqzuwtxFEUFgOlxB1fe&export=download&confirm=t",
+    "size": 470828516,
+    "sha256": "6dee20fc800f1576a670c748a877cef42f05f2a8b30d5d986b08a72a8c9a0d42"
+  },
+  "mac": {
+    "url": "https://drive.usercontent.google.com/download?id=1pb2TnVkin5GtXvN7YJFl0zZnN_0MgMvC&export=download&confirm=t",
+    "size": 507922507,
+    "sha256": "6bfd7c7d2836954ce894fe943bbb4fd501d8b151ecb3369e7590030b48f71482"
+  }
+}
