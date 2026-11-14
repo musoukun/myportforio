@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 // Mac 版をインストールするときの注意 (もとは Apps Script のページの ?page=mac。openslaythe の issue #631 → #1180 でここに移した)
-// インストーラーの zip に入れる「Macで開くとき.txt」と同じ内容
+// インストーラーの dmg と zip に入れる「Macで開くとき.txt」と同じ内容 (openslaythe の issue #1897 で dmg 向けにした)
 export default function MacPage() {
 	return (
 		<>
@@ -28,11 +28,12 @@ export default function MacPage() {
 					<h2>インストールの手順</h2>
 					<ol className={styles.steps}>
 						<li>
-							受け取った <b>open spire mac.zip</b> をダブルクリックして展開し、出てきた <b>Open Spire</b> を{" "}
-							<b>アプリケーション</b> フォルダに移します。
+							受け取った <b>Open Spire.dmg</b> をダブルクリックして開き、出てきた <b>Open Spire</b> を、隣の{" "}
+							<b>Applications</b>（アプリケーション）にドラッグします。dmg の中の <b>Open Spire</b>{" "}
+							を直接開かず、必ずアプリケーションに入れてから開いてください。dmg の中からでは自動更新ができません。
 						</li>
 						<li>
-							<b>Open Spire</b> をダブルクリックします。最初は「"Open Spire" は開いていません」「Apple は検証できませんでした」のように出て開けません。
+							アプリケーションの <b>Open Spire</b> をダブルクリックします。最初は「"Open Spire" は開いていません」「Apple は検証できませんでした」のように出て開けません。
 							<b>完了</b> を押して閉じます。
 						</li>
 						<li>
@@ -58,8 +59,12 @@ export default function MacPage() {
 				<section className={styles.block}>
 					<h2>新しい版に入れ替えるとき</h2>
 					<p>
-						アプリケーションの <b>Open Spire</b> を、新しく展開したものに置き換えます。入れ替えたあとも、最初の 1 回は上の 3
-						の許可がもう一度要ります。
+						新しい版が出ると、ゲームのタイトルに「更新しますか？」と出ます。<b>更新</b>{" "}
+						を押すと、新しい版に入れ替わって起動し直します。タイトルの右上の <b>アップデートを確認</b> からも確かめられます。
+					</p>
+					<p>
+						手で入れ直すときは、新しい dmg から、アプリケーションの <b>Open Spire</b> を置き換えます。入れ替えたあとも、最初の 1
+						回は上の 3 の許可がもう一度要ります。
 					</p>
 					<p>
 						セーブと設定は <b>~/Library/Application Support/Godot/app_userdata/Open Spire/</b> に残るので、入れ替えても消えません。
