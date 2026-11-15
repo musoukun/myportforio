@@ -1,13 +1,15 @@
 {
-  "version": "0.7.6",
+  "version": "0.7.7",
+  "base": "0.7.7",
+  "engine": "4.7.2.stable",
   "windows": {
     "url": "https://drive.usercontent.google.com/download?id=1hN2SY2XIGHFwHuqzuwtxFEUFgOlxB1fe&export=download&confirm=t",
-    "size": 478481115,
-    "sha256": "9b1fb1339226ba132a72888d025c33ce6f04402d438cebd2d2e4046d5f559450"
+    "size": 488093286,
+    "sha256": "97013a9f4f2b2445f33eac7815a0e000cb3224d20ee755f377a741aa6f57300f"
   },
   "mac": {
     "url": "https://drive.usercontent.google.com/download?id=1pb2TnVkin5GtXvN7YJFl0zZnN_0MgMvC&export=download&confirm=t",
-    "size": 515430012,
-    "sha256": "e7cd6586644dc121f05995769d2f74ee506eed3c429adafa42c841dd6ca0ed62"
+    "size": 517014145,
+    "sha256": "a11c14cd316b8ff6620a8d50abfa8fe4c98e022f35e58e066cf237c5ebab9e7f"
   }
 }
