@@ -1,0 +1,545 @@
+/* 誕生日までのカウントダウン (/birthday/)
+   1930年代のカートゥーンの画風。水彩の背景の上に、キャラクター 2 人と、太い枠のふきだしを置く */
+
+.stage {
+	--paper: #f6ecd2;
+	--ink: #1d1a17;
+	--red: #d9422c;
+
+	position: relative;
+	isolation: isolate;
+	min-height: 100svh;
+	display: grid;
+	grid-template-rows: auto 1fr;
+	justify-items: center;
+	overflow: hidden;
+	background: #cfdcc4 url("/birthday/bg.webp") center bottom / cover no-repeat;
+	color: var(--ink);
+	font-family: var(--font-maru), "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+	font-weight: 700;
+}
+
+/* ── リボンの題 ───────────────────────── */
+
+.ribbon {
+	display: grid;
+	place-items: center;
+	width: min(94vw, 620px);
+	aspect-ratio: 1400 / 260;
+	margin: clamp(10px, 2.5vh, 24px) 0 0;
+	background: url("/birthday/ribbon.webp") center / contain no-repeat;
+	font-family: var(--font-dela), var(--font-maru), sans-serif;
+	font-weight: 400;
+	font-size: clamp(1rem, 4.3vw, 1.8rem);
+	letter-spacing: 0.06em;
+}
+
+/* ── ふきだし ───────────────────────── */
+
+.talk {
+	position: relative;
+	z-index: 2;
+	align-self: start;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: clamp(22px, 4vh, 36px);
+	margin-top: clamp(8px, 2vh, 20px);
+	padding: 0 16px;
+}
+
+.bubble {
+	position: relative;
+	margin: 0;
+	padding: clamp(14px, 2.6vh, 26px) clamp(22px, 4vw, 56px) clamp(10px, 2vh, 20px);
+	border: 5px solid var(--ink);
+	border-radius: 24px;
+	background: var(--paper);
+	box-shadow: 6px 8px 0 var(--ink);
+	text-align: center;
+	font-weight: inherit;
+	animation: pop 0.5s 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+
+.tail {
+	position: absolute;
+	top: calc(100% - 5px);
+	left: 12%;
+	width: 62px;
+	height: 53px;
+	overflow: visible;
+}
+
+/* 2 人の名前 (Codex に描かせたレタリング) を横に並べ、その下に「の誕生日まで」を置く */
+.who {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-items: center;
+	gap: 0.1em 0.5em;
+	font-size: clamp(0.9rem, 1.5vw, 1.2rem);
+}
+
+.name {
+	width: auto;
+	height: min(5.6vh, 7.2vw);
+}
+
+.until {
+	flex-basis: 100%;
+}
+
+.days {
+	display: flex;
+	justify-content: center;
+	align-items: baseline;
+	font-family: var(--font-dela), var(--font-maru), sans-serif;
+	font-weight: 400;
+	font-size: min(25vh, 34vw);
+	line-height: 1;
+}
+
+.ato {
+	font-size: 0.24em;
+}
+
+.num {
+	min-width: 0.6em;
+	margin: 0 0.08em;
+	color: var(--red);
+	-webkit-text-stroke: 0.05em var(--ink);
+	paint-order: stroke fill;
+	text-shadow: 0.035em 0.045em 0 var(--ink);
+}
+
+.nichi {
+	font-size: 0.3em;
+}
+
+.cheer {
+	display: block;
+	margin: 0.1em 0;
+	font-family: var(--font-dela), var(--font-maru), sans-serif;
+	font-weight: 400;
+	font-size: min(11vh, 11vw);
+	line-height: 1.15;
+	color: var(--red);
+	-webkit-text-stroke: 0.05em var(--ink);
+	paint-order: stroke fill;
+	text-shadow: 0.04em 0.05em 0 var(--ink);
+}
+
+/* 幅が足りないときは「誕生日」と「おめでとう！」の間で折り返す */
+.cheer span {
+	display: inline-block;
+}
+
+/* もう 1 人が思い浮かべている、細かい残り時間 */
+.cloud {
+	position: relative;
+	margin: 0 0 0 clamp(0px, 12vw, 220px);
+	padding: 0.6em 1.5em 0.7em;
+	border: 4px solid var(--ink);
+	border-radius: 999px;
+	background: var(--paper);
+	box-shadow: 4px 6px 0 var(--ink);
+	text-align: center;
+	animation: pop 0.5s 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+
+.cloud::before,
+.cloud::after {
+	content: "";
+	position: absolute;
+	border: 4px solid var(--ink);
+	border-radius: 50%;
+	background: var(--paper);
+}
+
+.cloud::before {
+	top: calc(100% + 4px);
+	right: 16%;
+	width: 18px;
+	height: 18px;
+}
+
+.cloud::after {
+	top: calc(100% + 26px);
+	right: 9%;
+	width: 10px;
+	height: 10px;
+}
+
+.date {
+	display: block;
+	font-size: clamp(0.75rem, 1.1vw, 0.9rem);
+}
+
+.clock {
+	display: block;
+	font-size: clamp(1.1rem, 2vw, 1.6rem);
+	font-variant-numeric: tabular-nums;
+}
+
+/* ── キャラクター ───────────────────────── */
+
+.char {
+	position: absolute;
+	z-index: 1;
+	bottom: clamp(6px, 3vh, 36px);
+}
+
+.char > img,
+.rig {
+	position: relative;
+	display: block;
+	width: auto;
+	height: 100%;
+	transform-origin: 50% 100%;
+	animation: bounce 0.72s var(--lag, 0s) ease-in-out infinite;
+}
+
+/* 足もとの影 */
+.char::before {
+	content: "";
+	position: absolute;
+	left: 12%;
+	right: 12%;
+	bottom: -3%;
+	height: 8%;
+	border-radius: 50%;
+	background: rgba(40, 30, 14, 0.28);
+	filter: blur(4px);
+}
+
+.party .char > img {
+	animation-name: jump;
+}
+
+/* 手前の 3 人 */
+.candle {
+	left: 1vw;
+	height: 27vh;
+}
+
+.risky {
+	left: 31vw;
+	height: 21vh;
+}
+
+.cake {
+	--lag: -0.36s;
+	right: 1vw;
+	height: 23vh;
+}
+
+/* 奥の楽隊とプレゼント。遠くにいるので小さい */
+.drum {
+	left: 16vw;
+	bottom: 31vh;
+	height: 10vh;
+}
+
+.trumpet {
+	left: 36vw;
+	bottom: 33vh;
+	height: 10vh;
+}
+
+.gift {
+	right: 24vw;
+	bottom: 31vh;
+	height: 10vh;
+}
+
+.popper {
+	right: 3vw;
+	bottom: 33vh;
+	height: 11vh;
+}
+
+/* 風船は空に浮かぶ。影は付けず、ゆっくり上下する */
+.balloon {
+	top: 46vh;
+	bottom: auto;
+	left: 1vw;
+	height: 13vh;
+}
+
+.balloon::before {
+	display: none;
+}
+
+.balloon > img,
+.party .balloon > img {
+	animation: float 3.4s ease-in-out infinite;
+}
+
+/* ── 縮んでいくろうそく ─────────────────────────
+   胴体の画像を上から切り、切り口に溶けたろうの画像を重ね、その上に火の画像を置く。
+   --burn は 0 (11月20日 0時、いちばん長い) から 1 (誕生日の 0時、いちばん短い) まで進む。
+   数字は、胴体の画像 (横 628 × 縦 1401) を測って決めた。顔と手に掛からないよう、切るのは上から 52% まで */
+
+.rig {
+	--cut: calc(var(--burn) * 52%);
+	aspect-ratio: 628 / 1401;
+}
+
+.rig img {
+	position: absolute;
+	height: auto;
+	transition:
+		clip-path 2.4s cubic-bezier(0.3, 0, 0.2, 1),
+		top 2.4s cubic-bezier(0.3, 0, 0.2, 1);
+}
+
+.body {
+	inset: 0;
+	width: 100%;
+	clip-path: inset(var(--cut) 0 0 0);
+}
+
+/* 溶けたろう。胴体より少し広く、切り口が隠れる高さに置く */
+.cap {
+	top: calc(var(--cut) - 8.7%);
+	left: 12.6%;
+	width: 62.6%;
+}
+
+.flame {
+	top: calc(var(--cut) - 28%);
+	left: 28.5%;
+	width: 30.7%;
+	transform-origin: 50% 100%;
+	animation: flame 0.9s ease-in-out infinite;
+}
+
+/* ── 紙ふぶき ───────────────────────── */
+
+.confetti {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	overflow: hidden;
+	pointer-events: none;
+}
+
+.confetti i {
+	position: absolute;
+	top: 0;
+	left: var(--x);
+	width: 11px;
+	height: 17px;
+	border: 2px solid var(--ink);
+	border-radius: 2px;
+	background: var(--color);
+	animation: fall var(--time) var(--wait) linear infinite;
+}
+
+.confetti i:nth-child(3n) {
+	width: 13px;
+	height: 13px;
+	border-radius: 50%;
+}
+
+/* ── 古いフィルムの見た目：四すみの暗さ、ざらつき、ちらつき ───────────────────────── */
+
+.film {
+	position: absolute;
+	inset: 0;
+	z-index: 5;
+	pointer-events: none;
+	background: radial-gradient(ellipse at center, rgba(30, 18, 6, 0) 52%, rgba(30, 18, 6, 0.5) 100%);
+	animation: flicker 3.7s steps(1) infinite;
+}
+
+.film::before {
+	content: "";
+	position: absolute;
+	inset: -40%;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1  0 0 0 0 0.08  0 0 0 0 0.05  0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+	opacity: 0.5;
+	mix-blend-mode: multiply;
+	animation: grain 0.5s steps(1) infinite;
+}
+
+/* ── 動き ───────────────────────── */
+
+@keyframes pop {
+	from {
+		opacity: 0;
+		scale: 0.6;
+	}
+	to {
+		opacity: 1;
+		scale: 1;
+	}
+}
+
+@keyframes bounce {
+	0%,
+	100% {
+		transform: translateY(0) scale(1, 1);
+	}
+	50% {
+		transform: translateY(-2%) scale(0.985, 1.03);
+	}
+}
+
+@keyframes jump {
+	0%,
+	100% {
+		transform: translateY(0) scale(1.04, 0.95);
+	}
+	45% {
+		transform: translateY(-14%) scale(0.97, 1.05);
+	}
+}
+
+@keyframes float {
+	0%,
+	100% {
+		transform: translateY(0) rotate(-2deg);
+	}
+	50% {
+		transform: translateY(-7%) rotate(2deg);
+	}
+}
+
+@keyframes flame {
+	0%,
+	100% {
+		transform: scale(1, 1) rotate(0deg);
+	}
+	35% {
+		transform: scale(0.94, 1.06) rotate(-2deg);
+	}
+	70% {
+		transform: scale(1.05, 0.95) rotate(2deg);
+	}
+}
+
+@keyframes fall {
+	from {
+		transform: translate3d(0, -12vh, 0) rotate(0deg);
+	}
+	to {
+		transform: translate3d(var(--sway), 112vh, 0) rotate(var(--spin));
+	}
+}
+
+@keyframes grain {
+	0% {
+		transform: translate(0, 0);
+	}
+	25% {
+		transform: translate(-6%, 4%);
+	}
+	50% {
+		transform: translate(5%, -7%);
+	}
+	75% {
+		transform: translate(-3%, -4%);
+	}
+}
+
+@keyframes flicker {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	31% {
+		opacity: 0.86;
+	}
+	33% {
+		opacity: 1;
+	}
+	72% {
+		opacity: 0.9;
+	}
+	74% {
+		opacity: 1;
+	}
+}
+
+/* ── 広い画面 ───────────────────────── */
+
+@media (min-width: 860px) {
+	.days {
+		font-size: min(26vh, 22vw);
+	}
+
+	.cheer {
+		font-size: min(13vh, 6.4vw);
+	}
+
+	.name {
+		height: 7vh;
+	}
+
+	.candle {
+		left: 3vw;
+		height: 50vh;
+	}
+
+	.risky {
+		left: 17vw;
+		height: 42vh;
+	}
+
+	.cake {
+		right: 4vw;
+		height: 46vh;
+	}
+
+	.drum {
+		left: 33vw;
+		bottom: 9vh;
+		height: 22vh;
+	}
+
+	.trumpet {
+		left: 47vw;
+		bottom: 1vh;
+		height: 25vh;
+	}
+
+	.gift {
+		right: 22vw;
+		bottom: 2vh;
+		height: 26vh;
+	}
+
+	.popper {
+		right: 20vw;
+		bottom: 44vh;
+		height: 14vh;
+	}
+
+	.balloon {
+		top: 10vh;
+		left: 6vw;
+		height: 26vh;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.bubble,
+	.cloud,
+	.char > img,
+	.rig,
+	.flame,
+	.film,
+	.film::before {
+		animation: none;
+	}
+
+	.rig img {
+		transition: none;
+	}
+
+	.confetti i {
+		top: var(--y);
+		animation: none;
+	}
+}
